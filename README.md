@@ -28,6 +28,10 @@ npm test
 | `npm test`                           | Runs all automated tests (Vitest) |
 | `npm run lint` / `npm run typecheck` | Static checks                     |
 | `npm run ci`                         | The full quality gate used by CI  |
+| `npm run dev`                        | Start the middleware with auto-reload (http://localhost:3000) |
+| `npm run db:migrate`                 | Apply PostgreSQL migrations       |
+
+See [docs/developer-setup.md](docs/developer-setup.md) for PostgreSQL and NetSuite sandbox setup.
 
 ## Branches
 

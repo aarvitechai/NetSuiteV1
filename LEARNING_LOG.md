@@ -114,3 +114,34 @@ One entry per phase: what was built, the key concepts, and answers to the plan's
    over many rows, and searches inside loops.
 3. *How do you avoid an over-permissive RESTlet?* Allow-lists, input validation, a restricted
    audience, and no generic query passthrough.
+
+## Phase 5 — Node.js middleware foundation
+
+**What I built**
+
+- Express 5 + TypeScript service
+- structured logging with redaction
+- correlation IDs (AsyncLocalStorage)
+- bearer auth with roles
+- Zod validation
+- consistent error format
+- health and readiness endpoints
+- idempotency service
+- audit service
+- Store port, with a memory and a PostgreSQL implementation (contract-tested against both)
+- NetSuite port, with three implementations:
+  - mock adapter, with fault injection
+  - REST adapter (TBA signing, SuiteQL paging)
+  - SOAP reference envelope
+- OpenAPI spec
+- developer setup guide
+
+**Review questions**
+
+1. *Why use an adapter layer?* It isolates NetSuite specifics, enables testing with mocks, and limits
+   the impact of change. See `docs/architecture/netsuite-integration.md`.
+2. *How do OAuth tokens expire and refresh?* TBA tokens do not expire; they are revoked. OAuth 2.0
+   access tokens expire after about 60 minutes. The client caches the token, refreshes it before
+   expiry, and on a 401 refreshes once and retries once.
+3. *400 versus 429 versus 5xx?* 400 is a permanent business error: don't retry, send to a human.
+   429 and 5xx are transient: retry with backoff and honour Retry-After.

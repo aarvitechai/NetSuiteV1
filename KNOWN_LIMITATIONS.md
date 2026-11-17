@@ -6,6 +6,7 @@ Use it to describe the project honestly, for example in interviews.
 ## Ran against a real NetSuite sandbox
 
 - Nothing yet. No sandbox credentials were available while this was built.
+- The PostgreSQL store **was** run against a real PostgreSQL 16, through the contract tests.
 
 ## Simulated (runs locally, clearly labelled)
 
@@ -45,3 +46,14 @@ Use it to describe the project honestly, for example in interviews.
 - The workflows are **specifications only**. They must be built in the UI and then imported into SDF.
 - The SuiteQL field names (`foreignamountremaining`, `approvalstatus = 2`, …) follow the NetSuite
   Records Catalog. They have not been executed against an account.
+
+## NetSuite adapters (Phase 5)
+
+- `NetSuiteRestAdapter` is tested only against a fake `fetch`. Things that need sandbox
+  verification:
+  - request body shapes (`apply.items`, `cashBack`, `currency.refName`)
+  - SuiteQL field names
+  - duplicate-externalId error text
+- `voidVendorPayment` over REST flags the payment for a manual void. The void itself is a manual
+  runbook step.
+- The SOAP envelope builder is reference material only. No SOAP calls are made.

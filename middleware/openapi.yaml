@@ -1,0 +1,167 @@
+openapi: 3.0.3
+info:
+  title: Northstar AP/AR Integration Platform API
+  version: 1.0.0
+  description: |
+    Learning project. All data is synthetic. Amounts are decimal strings ("1250.00") with an explicit ISO 4217 currency.
+    Every response carries an X-Correlation-Id header; quote it when reporting problems.
+    POST endpoints that change financial state require an Idempotency-Key header.
+servers:
+  - url: http://localhost:3000
+security:
+  - bearerAuth: []
+tags:
+  - name: health
+  - name: master-data
+  - name: audit
+paths:
+  /health:
+    get:
+      tags: [health]
+      security: []
+      summary: Liveness probe
+      responses:
+        '200': { description: Process is running }
+  /ready:
+    get:
+      tags: [health]
+      security: []
+      summary: Readiness probe (database and NetSuite reachable)
+      responses:
+        '200': { description: Ready }
+        '503': { description: A dependency is unavailable }
+  /api/v1/vendors:
+    get:
+      tags: [master-data]
+      summary: List vendors from NetSuite (bank tokens are never returned)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                {
+                  type: object,
+                  properties: { items: { type: array, items: { $ref: '#/components/schemas/Vendor' } } },
+                }
+        '401': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+  /api/v1/vendors/{externalId}:
+    get:
+      tags: [master-data]
+      summary: Get one vendor by external ID
+      parameters: [{ $ref: '#/components/parameters/ExternalId' }]
+      responses:
+        '200':
+          {
+            description: OK,
+            content: { application/json: { schema: { $ref: '#/components/schemas/Vendor' } } },
+          }
+        '404': { $ref: '#/components/responses/Error' }
+  /api/v1/customers:
+    get:
+      tags: [master-data]
+      summary: List customers
+      responses:
+        '200': { description: OK }
+  /api/v1/customers/{externalId}:
+    get:
+      tags: [master-data]
+      summary: Get one customer
+      parameters: [{ $ref: '#/components/parameters/ExternalId' }]
+      responses:
+        '200': { description: OK }
+        '404': { $ref: '#/components/responses/Error' }
+  /api/v1/bills/open:
+    get:
+      tags: [master-data]
+      summary: Open vendor bills (amount remaining > 0)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                {
+                  type: object,
+                  properties: { items: { type: array, items: { $ref: '#/components/schemas/VendorBill' } } },
+                }
+  /api/v1/invoices/open:
+    get:
+      tags: [master-data]
+      summary: Open customer invoices
+      parameters:
+        - { name: customer, in: query, required: false, schema: { type: string } }
+      responses:
+        '200': { description: OK }
+  /api/v1/audit:
+    get:
+      tags: [audit]
+      summary: Audit events for an entity or a correlation ID
+      parameters:
+        - { name: entityType, in: query, schema: { type: string } }
+        - { name: entityId, in: query, schema: { type: string } }
+        - { name: correlationId, in: query, schema: { type: string } }
+      responses:
+        '200': { description: OK }
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer }
+  parameters:
+    ExternalId:
+      name: externalId
+      in: path
+      required: true
+      schema: { type: string, pattern: '^[A-Za-z0-9_-]{1,64}$' }
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema: { type: string, pattern: '^[A-Za-z0-9_-]{8,100}$' }
+  responses:
+    Error:
+      description: Error
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+  schemas:
+    Money:
+      type: object
+      required: [amount, currency]
+      properties:
+        amount: { type: string, pattern: '^-?\d+(\.\d+)?$', example: '1250.00' }
+        currency: { type: string, pattern: '^[A-Z]{3}$', example: USD }
+    Error:
+      type: object
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code: { type: string, example: VALIDATION_FAILED }
+            message: { type: string }
+            details: {}
+            correlationId: { type: string }
+    Vendor:
+      type: object
+      properties:
+        externalId: { type: string }
+        internalId: { type: string }
+        companyName: { type: string }
+        currency: { type: string }
+        isInactive: { type: boolean }
+        paymentRail: { type: string, enum: [ACH, WIRE, VCARD] }
+    VendorBill:
+      type: object
+      properties:
+        externalId: { type: string }
+        vendorExternalId: { type: string }
+        tranId: { type: string }
+        tranDate: { type: string, format: date }
+        dueDate: { type: string, format: date }
+        currency: { type: string }
+        total: { type: string }
+        amountRemaining: { type: string }
+        approvalStatus: { type: string, enum: [APPROVED, PENDING, REJECTED] }
+        onHold: { type: boolean }
+        paymentInProgress: { type: boolean }
