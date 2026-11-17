@@ -324,3 +324,37 @@ One entry per phase: what was built, the key concepts, and answers to the plan's
    DLQ and outbox must be empty.
 3. *What is the exit criterion for UAT?* All scripts passed and signed off, no severity 1 or 2
    defects open, control totals balanced, and the accounting mappings reviewed.
+
+## Phase 13 — SDF, CI/CD and cloud deployment
+
+**What I built**
+
+- Production build with an asset copy step.
+- Multi-stage, non-root Docker image with a healthcheck.
+- docker-compose stack (PostgreSQL plus middleware, migrations on start, configurable ports).
+- GitHub Actions CI: Node 22 and 24 matrix, a PostgreSQL service, lint, format, typecheck, secret
+  scan, tests with JUnit and coverage artifacts, Docker build and container smoke test.
+- Deploy workflow: OIDC to AWS, GHCR image tagged by SHA, migrations task, ECS rolling deploy,
+  smoke test, and an approval gate through GitHub environments.
+- ECS task definition with secrets from Secrets Manager.
+- Smoke-test script and secret-scan script.
+- SDF deployment guide, deployment architecture with an environment matrix, and a rollback runbook.
+
+**Defects the container tests found**
+
+- The lockfile generated on Windows was missing Linux optional dependencies, so `npm ci` failed on
+  Linux. I regenerated the lockfile in a Linux container.
+- The non-root container user could not create `runtime-data`. This was a real EACCES error, fixed in
+  the Dockerfile.
+
+**Review questions**
+
+1. *What does SDF deploy, and what does middleware CI/CD deploy?* SDF deploys everything inside
+   NetSuite: scripts, objects, workflows. The pipeline deploys containers and migrations. Deploy SDF
+   first when the middleware depends on new fields.
+2. *How do you keep secrets out of build logs?* Nothing secret goes in the repo (enforced by a scan).
+   Masked environment secrets, OIDC instead of stored keys, runtime injection only, and the logger
+   redacts sensitive fields.
+3. *What is the rollback strategy for a database or accounting-mapping change?* Expand/contract
+   migrations, so rolling back the code is always safe. Postings already made with a wrong mapping are
+   corrected by finance with journals, using the control totals and audit trail to scope them.

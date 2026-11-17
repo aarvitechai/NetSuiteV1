@@ -1,0 +1,11 @@
+# Keep the build context small and never send secrets or local data to the Docker daemon.
+node_modules
+dist
+coverage
+reports
+runtime-data
+.git
+.env
+.env.*
+!.env.example
+*.docx

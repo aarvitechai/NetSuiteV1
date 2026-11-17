@@ -1,0 +1,87 @@
+# Continuous delivery: deploys when code lands on the environment branches.
+#   staging    → UAT environment (automatic)
+#   production → production environment (requires manual approval via the GitHub "production" environment)
+#
+# SAFETY: the job does nothing unless the repository variable DEPLOY_ENABLED is 'true' and the AWS
+# role is configured. A fork, or this learning repo without cloud access, never deploys anything.
+#
+# Secrets used (configured in GitHub → Settings → Environments, never in this file):
+#   AWS_DEPLOY_ROLE_ARN   IAM role assumed via OIDC (no long-lived AWS keys stored in GitHub)
+#   OPS_SMOKE_TOKEN       read-only ops token for the post-deploy smoke test
+name: Deploy
+
+on:
+  push:
+    branches: [staging, production]
+
+permissions:
+  contents: read
+  id-token: write # required for OIDC federation to AWS
+  packages: write # push the image to GitHub Container Registry
+
+concurrency:
+  group: deploy-${{ github.ref_name }}
+  cancel-in-progress: false # never cancel a deployment halfway
+
+jobs:
+  deploy:
+    if: vars.DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # Environment protection rules (required reviewers for production) are the approval gate.
+    environment: ${{ github.ref_name }}
+    env:
+      IMAGE: ghcr.io/${{ github.repository }}/middleware:${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push image (tagged with the commit SHA → traceable and rollback-able)
+        run: |
+          docker build -t "$IMAGE" .
+          docker push "$IMAGE"
+
+      - name: Configure AWS credentials (OIDC, short-lived)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Render task definition with the new image
+        id: render
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: infrastructure/aws/task-definition.json
+          container-name: middleware
+          image: ${{ env.IMAGE }}
+
+      - name: Run database migrations (one-off task, before traffic moves)
+        run: |
+          aws ecs run-task --cluster "${{ vars.ECS_CLUSTER }}" --launch-type FARGATE \
+            --task-definition "${{ vars.ECS_MIGRATE_TASK }}" \
+            --network-configuration "${{ vars.ECS_NETWORK_CONFIG }}" \
+            --overrides '{"containerOverrides":[{"name":"middleware","command":["node","dist/middleware/src/infrastructure/db/migrate.js"]}]}' \
+            --query 'tasks[0].taskArn' --output text > task.arn
+          aws ecs wait tasks-stopped --cluster "${{ vars.ECS_CLUSTER }}" --tasks "$(cat task.arn)"
+
+      - name: Deploy to ECS (rolling, waits for healthy tasks; circuit breaker rolls back on failure)
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.render.outputs.task-definition }}
+          cluster: ${{ vars.ECS_CLUSTER }}
+          service: ${{ vars.ECS_SERVICE }}
+          wait-for-service-stability: true
+
+      - name: Smoke test the deployed environment
+        env:
+          BASE_URL: ${{ vars.BASE_URL }}
+          OPS_TOKEN: ${{ secrets.OPS_SMOKE_TOKEN }}
+        run: |
+          npm ci
+          npm run smoke

@@ -10,7 +10,7 @@
   "scripts": {
     "dev": "tsx watch middleware/src/server.ts",
     "start": "node dist/middleware/src/server.js",
-    "build": "tsc -p tsconfig.build.json",
+    "build": "tsc -p tsconfig.build.json && node scripts/copy-assets.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint .",
     "format": "prettier --write .",
@@ -22,8 +22,12 @@
     "demo": "tsx scripts/demo.ts",
     "loadtest": "tsx scripts/load-test.ts",
     "db:migrate": "tsx middleware/src/infrastructure/db/migrate.ts",
-    "ci": "npm run lint && npm run format:check && npm run typecheck && npm run test",
-    "test:report": "vitest run --coverage --reporter=default --reporter=junit --outputFile.junit=reports/junit.xml"
+    "ci": "npm run lint && npm run format:check && npm run typecheck && npm run check:secrets && npm run test",
+    "test:report": "vitest run --coverage --reporter=default --reporter=junit --outputFile.junit=reports/junit.xml",
+    "smoke": "tsx scripts/smoke-test.ts",
+    "check:secrets": "node scripts/check-secrets.mjs",
+    "sdf:validate": "cd netsuite && npx --yes @oracle/suitecloud-cli project:validate",
+    "sdf:deploy": "cd netsuite && npx --yes @oracle/suitecloud-cli project:deploy"
   },
   "dependencies": {
     "decimal.js": "^10.6.0",

@@ -22,6 +22,8 @@ Severity:
 | D-009 | 11 | 3 | Security test | Prometheus metrics without labels were rendered as `name{}`, which is invalid | Key format fixed | `security.test.ts` metrics test |
 | D-010 | 11 | 2 | Security test | A **top-level** `consumerSecret` field was not redacted from logs. Only nested fields were. | Redact paths now cover the top level and one level deep for every sensitive name | `security.test.ts` "never writes secrets…" |
 | D-011 | 11 | 2 | Load test | `MemoryStore.transaction` deep-copied the whole store, which capped AR payments at 10/s | Undo-log transactions: **64× faster** | `store.test.ts` rollback contract plus `docs/performance/report.md` |
+| D-013 | 13 | 3 | Docker build | The `package-lock.json` generated on Windows was missing Linux-only optional dependencies, so `npm ci` failed on Linux. CI would have failed too. | Lockfile regenerated on Linux (Docker) | CI `npm ci` on ubuntu |
+| D-014 | 13 | 2 | Container smoke test | The non-root container could not create `/app/runtime-data`: EACCES, which returned 500 on SFTP-related endpoints | A writable directory owned by `node`, created in the Dockerfile | `ci.yml` container smoke test |
 | D-012 | 11 | 3 | Load test (analysis) | The REST adapter flags bills one PATCH at a time, giving N requests per batch | **Open.** Recommendation recorded in the performance report (bulk RESTlet or Map/Reduce). | — |
 
 ## Open defects

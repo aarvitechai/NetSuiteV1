@@ -1,0 +1,84 @@
+# Continuous integration: runs on every push and pull request, on every branch.
+# A change may only be promoted dev → staging → production → main when this pipeline is green.
+name: CI
+
+on:
+  push:
+  pull_request:
+
+# Least privilege: CI only needs to read the code.
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Lint · format · typecheck · secret scan · tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      matrix:
+        node: [22, 24] # current LTS and current release
+    services:
+      # A real PostgreSQL, so the Store contract tests run against the database used in production.
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: northstar
+          POSTGRES_PASSWORD: northstar
+          POSTGRES_DB: northstar
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U northstar"
+          --health-interval 5s
+          --health-retries 10
+    env:
+      TEST_DATABASE_URL: postgres://northstar:northstar@localhost:5432/northstar
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run format:check
+      - run: npm run typecheck
+      - run: npm run check:secrets
+      - run: npm run test:report
+      - name: Upload test and coverage reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports-node${{ matrix.node }}
+          path: |
+            reports/
+            coverage/
+          retention-days: 14
+
+  build:
+    name: Build and container image
+    runs-on: ubuntu-latest
+    needs: quality
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Build Docker image (not pushed from CI)
+        run: docker build -t northstar-middleware:${{ github.sha }} .
+      - name: Container smoke test
+        run: |
+          docker run -d --name mw -p 3000:3000 --env-file .env.example -e NODE_ENV=production northstar-middleware:${{ github.sha }}
+          for i in $(seq 1 30); do curl -fs localhost:3000/health && break; sleep 1; done
+          BASE_URL=http://localhost:3000 OPS_TOKEN=dev-ops-token npx tsx scripts/smoke-test.ts
+      - name: Container logs (on failure)
+        if: failure()
+        run: docker logs mw || true

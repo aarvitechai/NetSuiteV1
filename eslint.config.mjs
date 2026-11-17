@@ -31,6 +31,12 @@ export default tseslint.config(
     },
   },
   {
+    // Build and CI helper scripts are plain Node.js ES modules.
+    files: ['scripts/**/*.mjs'],
+    languageOptions: { sourceType: 'module', globals: globals.node },
+    rules: { 'no-console': 'off' },
+  },
+  {
     // SuiteCloud CLI config is a plain Node.js CommonJS file.
     files: ['netsuite/suitecloud.config.js'],
     languageOptions: { sourceType: 'commonjs', globals: globals.node },

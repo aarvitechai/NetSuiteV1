@@ -1,0 +1,79 @@
+{
+  "family": "northstar-middleware",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "executionRoleArn": "arn:aws:iam::<ACCOUNT_ID>:role/northstar-ecs-execution",
+  "taskRoleArn": "arn:aws:iam::<ACCOUNT_ID>:role/northstar-middleware-task",
+  "runtimePlatform": { "operatingSystemFamily": "LINUX", "cpuArchitecture": "X86_64" },
+  "containerDefinitions": [
+    {
+      "name": "middleware",
+      "image": "REPLACED_BY_PIPELINE",
+      "essential": true,
+      "readonlyRootFilesystem": false,
+      "user": "node",
+      "portMappings": [{ "containerPort": 3000, "protocol": "tcp" }],
+      "environment": [
+        { "name": "NODE_ENV", "value": "production" },
+        { "name": "LOG_LEVEL", "value": "info" },
+        { "name": "STORAGE_MODE", "value": "postgres" },
+        { "name": "NETSUITE_MODE", "value": "rest" },
+        { "name": "DISPATCH_MODE", "value": "worker" },
+        { "name": "RATE_LIMIT_PER_MINUTE", "value": "600" },
+        { "name": "SFTP_ROOT", "value": "/app/runtime-data/sftp" }
+      ],
+      "secrets": [
+        {
+          "name": "DATABASE_URL",
+          "valueFrom": "arn:aws:secretsmanager:<REGION>:<ACCOUNT_ID>:secret:northstar/<ENV>/database-url"
+        },
+        {
+          "name": "NETSUITE_ACCOUNT_ID",
+          "valueFrom": "arn:aws:secretsmanager:<REGION>:<ACCOUNT_ID>:secret:northstar/<ENV>/netsuite:account_id::"
+        },
+        {
+          "name": "NETSUITE_CONSUMER_KEY",
+          "valueFrom": "arn:aws:secretsmanager:<REGION>:<ACCOUNT_ID>:secret:northstar/<ENV>/netsuite:consumer_key::"
+        },
+        {
+          "name": "NETSUITE_CONSUMER_SECRET",
+          "valueFrom": "arn:aws:secretsmanager:<REGION>:<ACCOUNT_ID>:secret:northstar/<ENV>/netsuite:consumer_secret::"
+        },
+        {
+          "name": "NETSUITE_TOKEN_ID",
+          "valueFrom": "arn:aws:secretsmanager:<REGION>:<ACCOUNT_ID>:secret:northstar/<ENV>/netsuite:token_id::"
+        },
+        {
+          "name": "NETSUITE_TOKEN_SECRET",
+          "valueFrom": "arn:aws:secretsmanager:<REGION>:<ACCOUNT_ID>:secret:northstar/<ENV>/netsuite:token_secret::"
+        },
+        {
+          "name": "WEBHOOK_SIGNING_SECRET",
+          "valueFrom": "arn:aws:secretsmanager:<REGION>:<ACCOUNT_ID>:secret:northstar/<ENV>/webhook-signing-secret"
+        },
+        {
+          "name": "API_TOKENS",
+          "valueFrom": "arn:aws:secretsmanager:<REGION>:<ACCOUNT_ID>:secret:northstar/<ENV>/api-tokens"
+        }
+      ],
+      "healthCheck": {
+        "command": ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/health || exit 1"],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 20
+      },
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/northstar/<ENV>/middleware",
+          "awslogs-region": "<REGION>",
+          "awslogs-stream-prefix": "mw"
+        }
+      },
+      "stopTimeout": 30
+    }
+  ]
+}
