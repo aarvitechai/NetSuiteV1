@@ -43,7 +43,11 @@ export function loadSuiteScript<T = Record<string, unknown>>(relPath: string, st
     };
 
     // Run the file in an isolated context that only knows about `define` and basic globals.
-    vm.runInNewContext(code, { define, Date, JSON, Math, Object, Array, String, Number, Error }, { filename: absPath });
+    vm.runInNewContext(
+      code,
+      { define, Date, JSON, Math, Object, Array, String, Number, Error },
+      { filename: absPath },
+    );
     cache.set(absPath, exported);
     return exported;
   }
@@ -54,10 +58,17 @@ export function loadSuiteScript<T = Record<string, unknown>>(relPath: string, st
 /** A fake N/log that records calls so tests can assert on them. */
 export function fakeLog() {
   const entries: { level: string; title: string; details: unknown }[] = [];
-  const make = (level: string) => (title: string | { title: string; details: unknown }, details?: unknown) => {
-    // N/log accepts either (title, details) or ({ title, details }).
-    if (typeof title === 'object') entries.push({ level, title: title.title, details: title.details });
-    else entries.push({ level, title, details });
+  const make =
+    (level: string) => (title: string | { title: string; details: unknown }, details?: unknown) => {
+      // N/log accepts either (title, details) or ({ title, details }).
+      if (typeof title === 'object') entries.push({ level, title: title.title, details: title.details });
+      else entries.push({ level, title, details });
+    };
+  return {
+    entries,
+    debug: make('debug'),
+    audit: make('audit'),
+    error: make('error'),
+    emergency: make('emergency'),
   };
-  return { entries, debug: make('debug'), audit: make('audit'), error: make('error'), emergency: make('emergency') };
 }

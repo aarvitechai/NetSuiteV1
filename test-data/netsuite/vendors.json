@@ -1,7 +1,52 @@
 [
-  { "externalId": "VEND-ACMESUP", "companyName": "Acme Supplies LLC", "currency": "USD", "isInactive": false, "paymentRail": "ACH", "bankToken": "tok_bank_acmesup", "routingNumber": "110000000", "accountLast4": "6789" },
-  { "externalId": "VEND-BOLTCO", "companyName": "Bolt & Co Fasteners", "currency": "USD", "isInactive": false, "paymentRail": "ACH", "bankToken": "tok_bank_boltco", "routingNumber": "110000000", "accountLast4": "1122" },
-  { "externalId": "VEND-EUROPARTS", "companyName": "EuroParts GmbH", "currency": "EUR", "isInactive": false, "paymentRail": "WIRE", "bankToken": "tok_bank_europarts", "routingNumber": "", "accountLast4": "4455" },
-  { "externalId": "VEND-CARDPAY", "companyName": "CardPay Logistics", "currency": "USD", "isInactive": false, "paymentRail": "VCARD", "bankToken": "tok_vcard_cardpay", "routingNumber": "", "accountLast4": "" },
-  { "externalId": "VEND-OLDCO", "companyName": "OldCo Closed Inc", "currency": "USD", "isInactive": true, "paymentRail": "ACH", "bankToken": "tok_bank_oldco", "routingNumber": "110000000", "accountLast4": "0000" }
+  {
+    "externalId": "VEND-ACMESUP",
+    "companyName": "Acme Supplies LLC",
+    "currency": "USD",
+    "isInactive": false,
+    "paymentRail": "ACH",
+    "bankToken": "tok_bank_acmesup",
+    "routingNumber": "110000000",
+    "accountLast4": "6789"
+  },
+  {
+    "externalId": "VEND-BOLTCO",
+    "companyName": "Bolt & Co Fasteners",
+    "currency": "USD",
+    "isInactive": false,
+    "paymentRail": "ACH",
+    "bankToken": "tok_bank_boltco",
+    "routingNumber": "110000000",
+    "accountLast4": "1122"
+  },
+  {
+    "externalId": "VEND-EUROPARTS",
+    "companyName": "EuroParts GmbH",
+    "currency": "EUR",
+    "isInactive": false,
+    "paymentRail": "WIRE",
+    "bankToken": "tok_bank_europarts",
+    "routingNumber": "",
+    "accountLast4": "4455"
+  },
+  {
+    "externalId": "VEND-CARDPAY",
+    "companyName": "CardPay Logistics",
+    "currency": "USD",
+    "isInactive": false,
+    "paymentRail": "VCARD",
+    "bankToken": "tok_vcard_cardpay",
+    "routingNumber": "",
+    "accountLast4": ""
+  },
+  {
+    "externalId": "VEND-OLDCO",
+    "companyName": "OldCo Closed Inc",
+    "currency": "USD",
+    "isInactive": true,
+    "paymentRail": "ACH",
+    "bankToken": "tok_bank_oldco",
+    "routingNumber": "110000000",
+    "accountLast4": "0000"
+  }
 ]

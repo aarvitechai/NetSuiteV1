@@ -31,6 +31,11 @@ export default tseslint.config(
     },
   },
   {
+    // SuiteCloud CLI config is a plain Node.js CommonJS file.
+    files: ['netsuite/suitecloud.config.js'],
+    languageOptions: { sourceType: 'commonjs', globals: globals.node },
+  },
+  {
     files: ['portal/local-prototype/**/*.js'],
     languageOptions: { sourceType: 'script', globals: globals.browser },
   },

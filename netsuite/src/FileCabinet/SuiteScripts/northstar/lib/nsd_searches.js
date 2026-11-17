@@ -61,7 +61,12 @@ define(['N/search', './nsd_constants'], (search, C) => {
       title: 'NSD Ops - Pending Payment Batches',
       type: C.RECORD.PAY_BATCH,
       filters: [['custrecord_nsd_pb_status', 'anyof', ['Submitted', 'Accepted']]],
-      columns: ['custrecord_nsd_pb_batch_ref', 'custrecord_nsd_pb_total', 'custrecord_nsd_pb_status', 'created'],
+      columns: [
+        'custrecord_nsd_pb_batch_ref',
+        'custrecord_nsd_pb_total',
+        'custrecord_nsd_pb_status',
+        'created',
+      ],
     }),
 
     /** Ops: transactions whose last integration attempt failed. */
@@ -69,11 +74,7 @@ define(['N/search', './nsd_constants'], (search, C) => {
       id: 'customsearch_nsd_failed_integrations',
       title: 'NSD Ops - Failed Integrations',
       type: search.Type.TRANSACTION,
-      filters: [
-        ['mainline', 'is', 'T'],
-        'AND',
-        [C.BODY.INT_STATUS, 'is', C.INT_STATUS.ERROR],
-      ],
+      filters: [['mainline', 'is', 'T'], 'AND', [C.BODY.INT_STATUS, 'is', C.INT_STATUS.ERROR]],
       columns: ['type', 'tranid', C.BODY.ERROR_DETAIL, C.BODY.CORRELATION_ID, 'lastmodifieddate'],
     }),
 

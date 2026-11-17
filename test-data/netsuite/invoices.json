@@ -1,8 +1,74 @@
 [
-  { "externalId": "INV-2001", "customerExternalId": "CUST-ACME", "tranId": "NS-INV-2001", "tranDate": "2026-10-01", "dueDate": "2026-10-31", "currency": "USD", "total": "500.00", "amountRemaining": "500.00", "disputed": false, "_note": "20 days overdue" },
-  { "externalId": "INV-2002", "customerExternalId": "CUST-ACME", "tranId": "NS-INV-2002", "tranDate": "2026-11-05", "dueDate": "2026-12-05", "currency": "USD", "total": "1200.00", "amountRemaining": "1200.00", "disputed": false, "_note": "current" },
-  { "externalId": "INV-2003", "customerExternalId": "CUST-GLOBEX", "tranId": "NS-INV-2003", "tranDate": "2026-08-15", "dueDate": "2026-09-14", "currency": "USD", "total": "3400.00", "amountRemaining": "3400.00", "disputed": false, "_note": "67 days overdue -> escalate" },
-  { "externalId": "INV-2004", "customerExternalId": "CUST-GLOBEX", "tranId": "NS-INV-2004", "tranDate": "2026-09-20", "dueDate": "2026-10-20", "currency": "USD", "total": "860.00", "amountRemaining": "860.00", "disputed": true, "_note": "disputed -> no reminders" },
-  { "externalId": "INV-2005", "customerExternalId": "CUST-INITECH", "tranId": "NS-INV-2005", "tranDate": "2026-09-25", "dueDate": "2026-10-25", "currency": "USD", "total": "150.00", "amountRemaining": "150.00", "disputed": false, "_note": "26 days overdue" },
-  { "externalId": "INV-2006", "customerExternalId": "CUST-INITECH", "tranId": "NS-INV-2006", "tranDate": "2026-08-01", "dueDate": "2026-08-31", "currency": "USD", "total": "75.00", "amountRemaining": "0.00", "disputed": false, "_note": "paid" }
+  {
+    "externalId": "INV-2001",
+    "customerExternalId": "CUST-ACME",
+    "tranId": "NS-INV-2001",
+    "tranDate": "2026-10-01",
+    "dueDate": "2026-10-31",
+    "currency": "USD",
+    "total": "500.00",
+    "amountRemaining": "500.00",
+    "disputed": false,
+    "_note": "20 days overdue"
+  },
+  {
+    "externalId": "INV-2002",
+    "customerExternalId": "CUST-ACME",
+    "tranId": "NS-INV-2002",
+    "tranDate": "2026-11-05",
+    "dueDate": "2026-12-05",
+    "currency": "USD",
+    "total": "1200.00",
+    "amountRemaining": "1200.00",
+    "disputed": false,
+    "_note": "current"
+  },
+  {
+    "externalId": "INV-2003",
+    "customerExternalId": "CUST-GLOBEX",
+    "tranId": "NS-INV-2003",
+    "tranDate": "2026-08-15",
+    "dueDate": "2026-09-14",
+    "currency": "USD",
+    "total": "3400.00",
+    "amountRemaining": "3400.00",
+    "disputed": false,
+    "_note": "67 days overdue -> escalate"
+  },
+  {
+    "externalId": "INV-2004",
+    "customerExternalId": "CUST-GLOBEX",
+    "tranId": "NS-INV-2004",
+    "tranDate": "2026-09-20",
+    "dueDate": "2026-10-20",
+    "currency": "USD",
+    "total": "860.00",
+    "amountRemaining": "860.00",
+    "disputed": true,
+    "_note": "disputed -> no reminders"
+  },
+  {
+    "externalId": "INV-2005",
+    "customerExternalId": "CUST-INITECH",
+    "tranId": "NS-INV-2005",
+    "tranDate": "2026-09-25",
+    "dueDate": "2026-10-25",
+    "currency": "USD",
+    "total": "150.00",
+    "amountRemaining": "150.00",
+    "disputed": false,
+    "_note": "26 days overdue"
+  },
+  {
+    "externalId": "INV-2006",
+    "customerExternalId": "CUST-INITECH",
+    "tranId": "NS-INV-2006",
+    "tranDate": "2026-08-01",
+    "dueDate": "2026-08-31",
+    "currency": "USD",
+    "total": "75.00",
+    "amountRemaining": "0.00",
+    "disputed": false,
+    "_note": "paid"
+  }
 ]

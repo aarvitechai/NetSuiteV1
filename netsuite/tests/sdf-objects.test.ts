@@ -39,6 +39,9 @@ describe('SDF objects', () => {
   });
 
   it('uses the nsd prefix for every custom object (avoids clashes with other SuiteApps)', () => {
-    for (const file of readdirSync(OBJECTS)) expect(file).toMatch(/^(custbody|custentity|customrecord|customscript|customdeploy|customworkflow)_nsd_/);
+    for (const file of readdirSync(OBJECTS))
+      expect(file).toMatch(
+        /^(custbody|custentity|customrecord|customscript|customdeploy|customworkflow)_nsd_/,
+      );
   });
 });
