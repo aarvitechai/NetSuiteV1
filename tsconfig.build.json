@@ -1,0 +1,6 @@
+{
+  // The build only compiles runtime code (no tests) into dist/ for the Docker image.
+  "extends": "./tsconfig.json",
+  "include": ["middleware/src/**/*.ts", "simulators/**/*.ts"],
+  "exclude": ["**/*.test.ts", "node_modules", "dist"]
+}

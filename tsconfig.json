@@ -1,0 +1,34 @@
+{
+  // Why this file exists: TypeScript needs to know which files to check and how strict to be.
+  // We use one tsconfig for the whole repo so `npm run typecheck` checks middleware, simulators,
+  // scripts and tests in a single pass.
+  "compilerOptions": {
+    "target": "ES2022",
+    // "nodenext" makes TypeScript follow the exact rules Node.js uses to load modules.
+    // Our package.json has no "type": "module", so files compile to CommonJS.
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "types": ["node"],
+    "lib": ["ES2022"],
+    // strict = catch null/undefined mistakes at compile time instead of in production.
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "outDir": "dist",
+    "rootDir": ".",
+    "sourceMap": true
+  },
+  "include": [
+    "middleware/**/*.ts",
+    "simulators/**/*.ts",
+    "scripts/**/*.ts",
+    "netsuite/tests/**/*.ts",
+    "portal/**/*.ts"
+  ],
+  "exclude": ["node_modules", "dist"]
+}

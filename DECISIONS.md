@@ -1,0 +1,11 @@
+# Decisions log
+
+A short index of design decisions. The larger ones have a full ADR in `docs/decisions/`.
+
+| #   | Date       | Phase | Decision                                                                                              | Why                                                                                                                                                             |
+| --- | ---------- | ----- | ----------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | 2026-11-17 | 0     | NetSuite is the accounting system of record ([ADR-0001](docs/decisions/ADR-0001-system-of-record.md)) | Gives one source of truth for GL balances. The middleware only stores integration metadata.                                                                     |
+| 2   | 2026-11-17 | 0     | The whole repo is a single npm package (not workspaces)                                               | Simpler for a learner: one `npm install` and one `npm test`.                                                                                                    |
+| 3   | 2026-11-17 | 0     | Express 5 + Zod + Pino + decimal.js                                                                   | These are widely used and well documented. Zod gives runtime validation together with TypeScript types, and decimal.js avoids floating-point errors with money. |
+| 4   | 2026-11-17 | 0     | In-memory storage by default, PostgreSQL optional                                                     | Tests and the demo run anywhere without Docker. The same repository interfaces have a PostgreSQL implementation.                                                |
+| 5   | 2026-11-17 | 0     | Static API tokens with roles for local auth                                                           | Keeps the learning setup self-contained. The production design (OAuth 2.0 / OIDC) is documented in `docs/architecture/security.md`.                             |

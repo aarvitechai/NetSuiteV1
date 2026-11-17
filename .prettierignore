@@ -1,0 +1,8 @@
+dist
+coverage
+node_modules
+runtime-data
+package-lock.json
+*.docx
+plan.md
+netsuite/src/Objects/**/*.xml

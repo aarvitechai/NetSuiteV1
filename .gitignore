@@ -1,0 +1,24 @@
+# Dependencies and build output: always regenerated, never committed.
+node_modules/
+dist/
+coverage/
+
+# Secrets: real environment files must NEVER be committed. Only .env.example is tracked.
+.env
+.env.*
+!.env.example
+
+# Runtime data written by the local SFTP sandbox, archives, quarantine, etc.
+runtime-data/
+
+# NetSuite SDF credentials/account bindings are machine-specific.
+netsuite/project.json
+.suitecloud-sdk/
+**/.attributes/
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.log

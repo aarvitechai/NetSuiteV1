@@ -41,6 +41,7 @@ You act as a senior NetSuite solution architect and integration mentor. The user
 - Payment batches use maker-checker approval, carry immutable batch references and detect duplicate bills.
 
 **Component split:**
+
 - **SuiteScript 2.x:** NetSuite-side validation and automation, bounded by governance limits. Map/Reduce scripts must be safe to restart.
 - **SuiteFlow:** declarative approval and status workflows.
 - **Node.js middleware:** orchestration, provider adapters, mapping, retries, webhooks, file and SFTP processing, monitoring.
@@ -79,27 +80,28 @@ infrastructure/
 
 ## Phase roadmap
 
-| Phase | Focus |
-|---|---|
-| 0 | Environment, access checklist, repo setup (README, .gitignore, .env.example, lint, format, test), system-of-record ADR |
-| 1 | P2P and O2C process maps, accounting mapping matrix, payment state diagram, glossary |
-| 2 | NetSuite configuration, custom records and fields, saved searches, data dictionary |
-| 3 | SuiteScript: User Event, Client, Scheduled, Map/Reduce, Suitelet, RESTlet |
-| 4 | SuiteFlow (AP approval, AR collections), saved searches, SuiteQL library |
-| 5 | Middleware foundation, OpenAPI, auth, SuiteTalk REST and SOAP adapters, PostgreSQL |
-| 6 | NetSuite ↔ middleware sync, external ID mapping, dead-letter queue and replay |
-| 7 | AP payment proposals and batches, simulated NACHA, wire and virtual-card files, SFTP, status callbacks |
-| 8 | AR payments, hosted-checkout simulation, webhooks, refunds and voids, collections |
-| 9 | SuiteCommerce MyAccount portal, or a clearly labelled local prototype |
-| 10 | Bank statement import (CSV and XML), reconciliation engine, exception queue |
-| 11 | Idempotency, outbox and inbox, DLQ, secrets, threat model, load testing |
-| 12 | Unit, contract, end-to-end and UAT tests, accounting reconciliation |
-| 13 | SDF, CI/CD quality gates, AWS or Azure deployment, rollback runbook |
-| 14 | Runbooks, SLOs, documentation, portfolio demo |
+| Phase | Focus                                                                                                                  |
+| ----- | ---------------------------------------------------------------------------------------------------------------------- |
+| 0     | Environment, access checklist, repo setup (README, .gitignore, .env.example, lint, format, test), system-of-record ADR |
+| 1     | P2P and O2C process maps, accounting mapping matrix, payment state diagram, glossary                                   |
+| 2     | NetSuite configuration, custom records and fields, saved searches, data dictionary                                     |
+| 3     | SuiteScript: User Event, Client, Scheduled, Map/Reduce, Suitelet, RESTlet                                              |
+| 4     | SuiteFlow (AP approval, AR collections), saved searches, SuiteQL library                                               |
+| 5     | Middleware foundation, OpenAPI, auth, SuiteTalk REST and SOAP adapters, PostgreSQL                                     |
+| 6     | NetSuite ↔ middleware sync, external ID mapping, dead-letter queue and replay                                          |
+| 7     | AP payment proposals and batches, simulated NACHA, wire and virtual-card files, SFTP, status callbacks                 |
+| 8     | AR payments, hosted-checkout simulation, webhooks, refunds and voids, collections                                      |
+| 9     | SuiteCommerce MyAccount portal, or a clearly labelled local prototype                                                  |
+| 10    | Bank statement import (CSV and XML), reconciliation engine, exception queue                                            |
+| 11    | Idempotency, outbox and inbox, DLQ, secrets, threat model, load testing                                                |
+| 12    | Unit, contract, end-to-end and UAT tests, accounting reconciliation                                                    |
+| 13    | SDF, CI/CD quality gates, AWS or Azure deployment, rollback runbook                                                    |
+| 14    | Runbooks, SLOs, documentation, portfolio demo                                                                          |
 
 ## Definition of done (every phase)
 
 A phase is done when all of these hold:
+
 - The flow can be explained in plain language.
 - The work is committed with meaningful history.
 - The tests pass.
