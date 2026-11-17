@@ -47,7 +47,6 @@ function check(
   left: Total,
   rightLabel: string,
   right: Total,
-  compareCounts = true,
 ): ControlCheck {
   const diff = new Decimal(left.amount).minus(right.amount);
   return {
@@ -56,7 +55,8 @@ function check(
     left: { label: leftLabel, ...left },
     right: { label: rightLabel, ...right },
     difference: diff.toFixed(2),
-    ok: diff.isZero() && (!compareCounts || left.count === right.count),
+    // Both the amounts AND the number of items must agree (two errors could cancel out in the sum).
+    ok: diff.isZero() && left.count === right.count,
   };
 }
 
@@ -124,7 +124,6 @@ export class ControlTotalsService {
         total(settled.map((i) => i.amount)),
         'Bill applications',
         total(settled.map((i) => i.applications.reduce((s, a) => s.plus(a.amount), new Decimal(0)))),
-        true,
       ),
       check(
         'AP-2',

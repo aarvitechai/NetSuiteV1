@@ -65,7 +65,7 @@
 
 | Secret | Where it lives (dev) | Where it lives (cloud) | Rotation |
 |---|---|---|---|
-| NetSuite TBA consumer and token secrets | `.env` (never committed) | AWS Secrets Manager or Azure Key Vault | Revoke and issue a new token in NetSuite, update the store; `CachedSecretProvider` picks it up |
+| NetSuite TBA consumer and token secrets | `.env` (never committed) | AWS Secrets Manager or Azure Key Vault | Revoke and issue a new token in NetSuite, update the secret, then redeploy the service (ECS injects secrets when a task starts) |
 | Webhook signing secret | `.env` | Secret manager | Set the new value as `WEBHOOK_SIGNING_SECRET` and keep the old one as `WEBHOOK_SIGNING_SECRET_PREVIOUS` until the provider has switched over |
 | Database password | docker-compose (local only) | Managed DB with IAM auth or a rotated secret | Managed rotation |
 | API tokens | `.env` | Replaced by an identity provider | — |

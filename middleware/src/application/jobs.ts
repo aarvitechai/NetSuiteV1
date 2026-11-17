@@ -81,10 +81,6 @@ export class JobRunner {
     this.handlers.set(topic, handler);
   }
 
-  hasHandler(topic: string): boolean {
-    return this.handlers.has(topic);
-  }
-
   /**
    * Runs one unit of work with retries. On final failure the work goes to the DLQ.
    * Returns the job record. It never throws for handler failures, so a batch can continue with the next item.

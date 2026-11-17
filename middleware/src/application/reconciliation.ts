@@ -65,7 +65,7 @@ export class ReconciliationService {
     private readonly store: Store,
     private readonly netsuite: NetSuitePort,
     private readonly audit: AuditService,
-    private readonly jobs: JobRunner,
+    jobs: JobRunner, // only needed to register handlers in the constructor
     private readonly dispatcher: Dispatcher,
     private readonly clock: Clock,
   ) {
@@ -234,7 +234,7 @@ export class ReconciliationService {
       await this.setLineStatus(m.bankLineIds, auto ? 'MATCHED' : 'SUGGESTED');
       if (auto) {
         autoMatched++;
-        await this.finalize(match, byKey);
+        await this.finalize(match);
       } else suggested++;
     }
     for (const x of exceptions) {
@@ -274,12 +274,14 @@ export class ReconciliationService {
   }
 
   /** Applies an approved match: middleware states → Reconciled, then a NetSuite custom record and an audit event. */
-  private async finalize(match: ReconMatch, byKey?: Map<string, Candidate>) {
+  private async finalize(match: ReconMatch) {
     const instructions = this.store.repo<PaymentInstruction>('payment_instructions');
+    const settlements = this.store.repo<Settlement>('settlements');
+    // Candidate keys are NetSuite externalIds: an instruction id (Vendor Payment), a settlement id
+    // (Deposit), a refund id, or "<instruction id>:REVERSAL" (which matches no instruction, on purpose).
     for (const key of match.candidateKeys) {
-      const type = byKey?.get(key)?.type ?? (key.endsWith(':REVERSAL') ? 'VendPymtReversal' : undefined);
       const pi = await instructions.get(key);
-      if (pi && pi.status === 'Settled' && type !== 'VendPymtReversal') {
+      if (pi?.status === 'Settled') {
         pi.history.push(
           transition(
             'Settled',
@@ -292,13 +294,8 @@ export class ReconciliationService {
         pi.status = 'Reconciled';
         await instructions.upsert(pi);
       }
-      const settlement = await this.store
-        .repo<Settlement & { reconciledBy?: string }>('settlements')
-        .get(key);
-      if (settlement)
-        await this.store
-          .repo<Settlement & { reconciledBy?: string }>('settlements')
-          .upsert({ ...settlement, reconciledBy: match.id });
+      const settlement = await settlements.get(key);
+      if (settlement) await settlements.upsert({ ...settlement, reconciledBy: match.id });
     }
     await this.audit.record({
       action: 'RECONCILIATION_APPROVED',
@@ -443,7 +440,7 @@ export class ReconciliationService {
         });
     }
     await this.setLineStatus(input.bankLineIds, 'MATCHED');
-    await this.finalize(match, new Map(chosen.map((c) => [c!.key, c!])));
+    await this.finalize(match);
     await this.dispatcher.flush();
     return match;
   }

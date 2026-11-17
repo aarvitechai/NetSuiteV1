@@ -9,27 +9,20 @@
  *   Bank – The statement shows every movement. Reconciliation matches everything.
  *   Exit criterion: every control total balances (no transaction lost or duplicated).
  */
-import type { Express } from 'express';
 import request from 'supertest';
 import { describe, expect, it } from 'vitest';
 import { BankSimulator } from '../../../simulators/bank/bank-simulator';
-import { auth, makeTestContext, TOKENS } from '../helpers';
+import { auth, deliverWebhooks, makeTestContext, pollBank, TOKENS } from '../helpers';
 
 let n = 0;
 const key = () => `e2e-${++n}-${Date.now()}`;
-const poll = (app: Express) => request(app).post('/api/v1/bank/inbound/poll').set(auth(TOKENS.ops));
+const poll = pollBank;
 
 describe('period close: AP + AR + bank + NetSuite balance', () => {
   it('runs the full period and proves the control totals balance', async () => {
     const { app, container, netsuite } = makeTestContext();
     const bank = new BankSimulator(container.files, { returnPayees: { 'VEND-BOLTCO': 'R01' } });
-    container.provider.setDeliver(async (raw, signature) => {
-      await request(app)
-        .post('/webhooks/payment-provider')
-        .set('Content-Type', 'application/json')
-        .set('X-Signature', signature)
-        .send(raw);
-    });
+    deliverWebhooks(app, container);
 
     // ---------------- AP ----------------
     const batch = (

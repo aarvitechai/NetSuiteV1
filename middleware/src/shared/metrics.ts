@@ -60,10 +60,6 @@ export class Metrics {
     h.count++;
   }
 
-  counter(name: string, labels: Labels = {}): number {
-    return this.counters.get(key(name, labels)) ?? 0;
-  }
-
   /** Prometheus exposition format. */
   render(): string {
     const lines: string[] = [];

@@ -114,6 +114,7 @@ Use it to describe the project honestly, for example in interviews.
 - The outbox `drain()` is safe within ONE process. With several workers on PostgreSQL, claiming must
   use `FOR UPDATE SKIP LOCKED` (documented, not implemented).
 - The rate limiter is in-memory per instance.
-- Secrets come from environment variables. The cloud secret-manager integration is designed
-  (`SecretProvider`) but no AWS or Azure SDK is wired in.
+- Secrets are read from environment variables. In the cloud, ECS injects them from AWS Secrets
+  Manager at task start (`infrastructure/aws/task-definition.json`), so rotating a secret needs a
+  redeploy. The webhook secret supports a no-downtime rotation (current plus previous).
 - The load test uses mock NetSuite. Real API latency and governance must be measured in a sandbox.

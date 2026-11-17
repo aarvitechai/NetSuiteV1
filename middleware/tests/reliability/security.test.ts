@@ -5,11 +5,6 @@ import { Writable } from 'node:stream';
 import request from 'supertest';
 import { describe, expect, it } from 'vitest';
 import { signPayload } from '../../src/adapters/payment-provider/webhook-signature';
-import {
-  CachedSecretProvider,
-  EnvSecretProvider,
-  hydrateSecrets,
-} from '../../src/infrastructure/secrets/secret-provider';
 import { runWithContext } from '../../src/shared/context';
 import { createLogger } from '../../src/shared/logger';
 import { auth, makeTestContext, TOKENS } from '../helpers';
@@ -102,21 +97,6 @@ describe('secrets', () => {
         .send(raw);
     expect((await send(oldSecret)).status).toBe(202);
     expect((await send('some-other-secret-0123456789abcd')).status).toBe(401);
-  });
-
-  it('caches secrets for a TTL so rotated values are picked up without a restart', async () => {
-    const env: Record<string, string> = { API_KEY: 'v1' };
-    let now = 0;
-    const p = new CachedSecretProvider(new EnvSecretProvider(env), 1000, () => now);
-    expect(await p.get('API_KEY')).toBe('v1');
-    env.API_KEY = 'v2'; // rotated in the secret store
-    expect(await p.get('API_KEY')).toBe('v1'); // still cached
-    now = 1500;
-    expect(await p.get('API_KEY')).toBe('v2');
-
-    const target: Record<string, string | undefined> = {};
-    await hydrateSecrets(p, ['API_KEY', 'MISSING'], target);
-    expect(target).toEqual({ API_KEY: 'v2' });
   });
 });
 

@@ -13,7 +13,6 @@
 import type {
   Customer,
   DecimalString,
-  IntegrationStatus,
   Invoice,
   IsoDate,
   PaymentApplication,
@@ -127,12 +126,6 @@ export interface NetSuitePort {
 
   // ---- reconciliation / ops ----
   listTransactions(fromDate: IsoDate, toDate: IsoDate): Promise<NsTransactionSummary[]>;
-  updateIntegrationStatus(
-    recordType: string,
-    externalId: string,
-    status: IntegrationStatus,
-    detail?: { correlationId?: string; errorDetail?: string; providerRef?: string },
-  ): Promise<void>;
   /** Stores an APPROVED reconciliation match in NetSuite (custom record), so finance sees it there. */
   recordReconciliation(input: ReconciliationRecordInput): Promise<UpsertResult>;
   ping(): Promise<void>;

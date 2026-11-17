@@ -53,7 +53,7 @@ export const COLLECTIONS = {
   provider_references: ['entityType', 'entityId', 'provider'],
   outbox_messages: ['status', 'topic'],
   dead_letters: ['status', 'topic'],
-  payment_batches: ['status', 'rail', 'currency'],
+  payment_batches: ['status', 'rail', 'currency', 'batchRef'],
   payment_instructions: ['batchId', 'status', 'counterpartyExternalId'],
   payment_intents: ['customerExternalId', 'status', 'providerRef'],
   settlements: ['provider', 'status'],

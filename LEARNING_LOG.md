@@ -394,3 +394,43 @@ One entry per phase: what was built, the key concepts, and answers to the plan's
    - outbox claiming that works with several workers;
    - bulk flagging in NetSuite;
    - OIDC for authentication.
+
+## Code review and cleanup (after Phase 14)
+
+**How dead code was found**
+
+- I ran `tsc --noUnusedLocals --noUnusedParameters`.
+- I also ran a script that lists every export and where it is used: in other source files, only in
+  tests, or nowhere.
+
+**What was removed**
+
+| Item | Why it was unnecessary |
+|---|---|
+| `money.subtract`, `money.isPositive`, `money.toJSON` | No code used them |
+| `payment-state.isTerminal`, `ACCOUNTING_TRIGGER_STATES` | No code used them. The test now checks terminal states with `canTransition`. |
+| `IsoDateTime` type | Unused |
+| The whole `infrastructure/secrets` module | Only tests used it. The platform (ECS) already injects secrets. |
+| `NetSuitePort.updateIntegrationStatus` | No application code called it. It is now a private helper in the REST adapter. |
+| `JobRunner.hasHandler`, `Metrics.counter` | Never called |
+| Unused `jobs` class properties in two services, and an always-true `compareCounts` parameter | Noise |
+
+**What was made cleaner**
+
+- **AP service.** Six copies of "save batch, instructions, audit and outbox in one transaction" became
+  one `saveBatch()` helper. The atomicity rule now lives in one place.
+- **Reconciliation `finalize()`.** The optional lookup map and the type cast are gone, and
+  `Settlement` now has a proper `reconciledBy` field.
+- **Route grouping.** `/audit` moved to the ops routes.
+- **Tests.** Shared `deliverWebhooks()` and `pollBank()` helpers replace 8 copies of the same wiring.
+- **Development logs.** `npm run dev` now uses `pino-pretty`, so logs are readable.
+
+**What was made more scalable**
+
+| Problem | Before | After |
+|---|---|---|
+| Finding bills already in a batch | 1 query per open batch, plus 1 per status (N+1) | 5 indexed queries, whatever the number of batches |
+| Finding a batch from a bank file reference | Scanned 4 status lists | Direct lookup on a unique index (`migrations/002_batch_ref_index.sql`) |
+| `NetSuiteRestAdapter.getInvoice` | Downloaded every open invoice to find one. It also could not find a paid invoice (a correctness bug). | A one-row SuiteQL query |
+
+**Guard against regressions:** `noUnusedLocals` and `noUnusedParameters` are now on in `tsconfig.json`.

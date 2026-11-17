@@ -53,20 +53,5 @@ export function masterDataRoutes(c: Container): Router {
     res.json({ items: await c.netsuite.listOpenInvoices(q.customer) });
   });
 
-  r.get('/audit', requireRole('ops', 'ap_checker'), async (req, res) => {
-    const q = parse(
-      z.union([
-        z.object({ entityType: z.string().min(1).max(50), entityId: z.string().min(1).max(100) }),
-        z.object({ correlationId: z.string().min(8).max(100) }),
-      ]),
-      req.query,
-    );
-    const items =
-      'correlationId' in q
-        ? await c.audit.byCorrelation(q.correlationId)
-        : await c.audit.forEntity(q.entityType, q.entityId);
-    res.json({ items });
-  });
-
   return r;
 }

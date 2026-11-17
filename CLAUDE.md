@@ -77,7 +77,7 @@ middleware/src/
   application/     use cases + ports/ (store, netsuite, payment-provider interfaces)
   adapters/        netsuite/ (mock, rest, soap ref, suiteql, oauth1), bank/ (nacha, payment-files, vault,
                    statement-parsers), payment-provider/ (simulator, webhook signatures), source/ (mapping)
-  infrastructure/  memory/ + db/ (Store impls, migrations), files/ (LocalFolderSftp), secrets/
+  infrastructure/  memory/ + db/ (Store impls, append-only migrations), files/ (LocalFolderSftp)
   api/             http.ts (context, auth, roles, validation, idempotency, errors), security.ts, routes/
   container.ts     composition root: the ONLY place that wires concrete implementations
 middleware/tests/  unit/, contract/, api/, reliability/, e2e/, plus helpers.ts (makeTestContext)
@@ -94,6 +94,10 @@ docs/              see docs/architecture/overview.md for the full map; LEARNING_
 - **New collections need two updates.** Add the collection and its filterable fields to `COLLECTIONS` in `application/ports/store.ts`, **and** add a table and indexes in a new migration file. A test checks that they agree.
 - **Field IDs live in one place on each side.** SuiteScript field IDs come only from `lib/nsd_constants.js`, and each has an SDF XML object (enforced by tests). The collection-stage rule exists in both `domain/ar.ts` and `nsd_rules.js`, and a parity test enforces that they match.
 - **Tests use the shared setup.** Use `makeTestContext()` (fixed clock, mock NetSuite, temp SFTP folder, no retry sleep). Pass config overrides as the second argument.
+
+- **Dead code does not compile.** `noUnusedLocals` and `noUnusedParameters` are on. Do not add
+  exports "for later": add code when something uses it.
+- **Migrations are append-only.** Never edit an applied migration. Add `NNN_description.sql`.
 
 **Gotchas:**
 

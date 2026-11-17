@@ -354,18 +354,16 @@ export class NetSuiteRestAdapter implements NetSuitePort {
     });
   }
 
-  async listOpenInvoices(customerExternalId?: string): Promise<Invoice[]> {
-    const rows = await this.suiteql<Record<string, string>>(
-      `SELECT t.id, t.externalid, c.externalid AS cust_eid, t.tranid,
-              TO_CHAR(t.trandate, 'YYYY-MM-DD') AS trandate, TO_CHAR(t.duedate, 'YYYY-MM-DD') AS duedate,
-              BUILTIN.DF(t.currency) AS currency, t.foreigntotal AS total, t.foreignamountremaining AS remaining,
-              t.custbody_nsd_dispute AS disputed, t.custbody_nsd_collection_stage AS stage
-       FROM transaction t JOIN customer c ON c.id = t.entity
-       WHERE t.type = 'CustInvc' AND t.foreignamountremaining > 0
-       ${customerExternalId ? 'AND c.externalid = :cust' : ''}`,
-      customerExternalId ? { cust: customerExternalId } : {},
-    );
-    return rows.map((r) => ({
+  private static readonly INVOICE_SELECT = `
+    SELECT t.id, t.externalid, c.externalid AS cust_eid, t.tranid,
+           TO_CHAR(t.trandate, 'YYYY-MM-DD') AS trandate, TO_CHAR(t.duedate, 'YYYY-MM-DD') AS duedate,
+           BUILTIN.DF(t.currency) AS currency, t.foreigntotal AS total, t.foreignamountremaining AS remaining,
+           t.custbody_nsd_dispute AS disputed, t.custbody_nsd_collection_stage AS stage
+    FROM transaction t JOIN customer c ON c.id = t.entity
+    WHERE t.type = 'CustInvc'`;
+
+  private static toInvoice(r: Record<string, string>): Invoice {
+    return {
       externalId: r.externalid!,
       internalId: String(r.id),
       customerExternalId: r.cust_eid!,
@@ -377,11 +375,26 @@ export class NetSuiteRestAdapter implements NetSuitePort {
       amountRemaining: r.remaining!,
       disputed: r.disputed === 'T',
       collectionStage: (r.stage as Invoice['collectionStage']) || 'NONE',
-    }));
+    };
   }
 
+  async listOpenInvoices(customerExternalId?: string): Promise<Invoice[]> {
+    const rows = await this.suiteql<Record<string, string>>(
+      `${NetSuiteRestAdapter.INVOICE_SELECT} AND t.foreignamountremaining > 0
+       ${customerExternalId ? 'AND c.externalid = :cust' : ''}`,
+      customerExternalId ? { cust: customerExternalId } : {},
+    );
+    return rows.map(NetSuiteRestAdapter.toInvoice);
+  }
+
+  /** One-row lookup by external ID (open or paid), instead of downloading every open invoice. */
   async getInvoice(externalId: string): Promise<Invoice | undefined> {
-    return (await this.listOpenInvoices()).find((i) => i.externalId === externalId);
+    const rows = await this.suiteql<Record<string, string>>(
+      `${NetSuiteRestAdapter.INVOICE_SELECT} AND t.externalid = :eid`,
+      { eid: externalId },
+      1,
+    );
+    return rows[0] && NetSuiteRestAdapter.toInvoice(rows[0]);
   }
 
   async setInvoiceCollectionStage(externalId: string, stage: Invoice['collectionStage']): Promise<void> {
@@ -471,7 +484,8 @@ export class NetSuiteRestAdapter implements NetSuitePort {
     );
   }
 
-  async updateIntegrationStatus(
+  /** Writes the integration status custom fields (used when a void must be done manually). */
+  private async updateIntegrationStatus(
     recordType: string,
     externalId: string,
     status: IntegrationStatus,

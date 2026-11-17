@@ -8,7 +8,7 @@
 import request from 'supertest';
 import { describe, expect, it } from 'vitest';
 import { BankSimulator } from '../../../simulators/bank/bank-simulator';
-import { auth, makeTestContext, TOKENS } from '../helpers';
+import { auth, deliverWebhooks, makeTestContext, TOKENS } from '../helpers';
 
 let n = 0;
 const key = () => `obx-${++n}-${Date.now()}`;
@@ -69,13 +69,7 @@ describe('transactional outbox', () => {
 
   it('webhooks accepted while the worker is down are processed later, exactly once', async () => {
     const { app, container, netsuite } = makeTestContext({}, { DISPATCH_MODE: 'worker' });
-    container.provider.setDeliver(async (raw, signature) => {
-      await request(app)
-        .post('/webhooks/payment-provider')
-        .set('Content-Type', 'application/json')
-        .set('X-Signature', signature)
-        .send(raw);
-    });
+    deliverWebhooks(app, container);
     const intent = (
       await request(app)
         .post('/api/v1/payment-intents')

@@ -49,7 +49,7 @@ export class WebhookService {
   constructor(
     private readonly store: Store,
     private readonly ar: ArPaymentService,
-    private readonly jobs: JobRunner,
+    jobs: JobRunner, // only needed to register handlers in the constructor
     private readonly dispatcher: Dispatcher,
     private readonly audit: AuditService,
     private readonly clock: Clock,

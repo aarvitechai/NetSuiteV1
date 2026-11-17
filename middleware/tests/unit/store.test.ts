@@ -8,7 +8,7 @@
  * WHY a shared contract suite: it proves the implementations are interchangeable. Code that passes
  * against memory will behave the same against PostgreSQL.
  */
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { COLLECTIONS, type Store } from '../../src/application/ports/store';
@@ -96,12 +96,14 @@ if (pgUrl) {
   });
 }
 
-describe('migration 001', () => {
-  it('creates a table and the indexes for every collection', () => {
-    const sql = readFileSync(
-      resolve(__dirname, '../../src/infrastructure/db/migrations/001_init.sql'),
-      'utf8',
-    );
+describe('migrations', () => {
+  it('together create a table and an index for every collection field', () => {
+    // Migrations are append-only, so a new index may live in a later file: check them all together.
+    const dir = resolve(__dirname, '../../src/infrastructure/db/migrations');
+    const sql = readdirSync(dir)
+      .filter((f) => f.endsWith('.sql'))
+      .map((f) => readFileSync(resolve(dir, f), 'utf8'))
+      .join('\n');
     for (const [table, fields] of Object.entries(COLLECTIONS)) {
       expect(sql).toContain(`CREATE TABLE IF NOT EXISTS ${table} (`);
       for (const f of fields) expect(sql).toContain(`ON ${table} ((data->>'${f}'))`);

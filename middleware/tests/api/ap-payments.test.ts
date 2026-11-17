@@ -7,7 +7,7 @@ import type { Express } from 'express';
 import request from 'supertest';
 import { describe, expect, it } from 'vitest';
 import { BankSimulator } from '../../../simulators/bank/bank-simulator';
-import { auth, makeTestContext, TOKENS } from '../helpers';
+import { auth, makeTestContext, pollBank, TOKENS } from '../helpers';
 
 let keySeq = 0;
 const key = () => `test-key-${++keySeq}-${Date.now()}`;
@@ -36,7 +36,7 @@ async function approvedAndSubmitted(app: Express) {
   return submitted.body;
 }
 
-const poll = (app: Express) => request(app).post('/api/v1/bank/inbound/poll').set(auth(TOKENS.ops));
+const poll = pollBank;
 
 describe('AP payment proposal', () => {
   it('groups eligible bills per vendor and explains every exclusion', async () => {

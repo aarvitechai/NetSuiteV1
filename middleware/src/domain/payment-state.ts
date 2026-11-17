@@ -61,17 +61,6 @@ export function assertTransition(from: PaymentState, to: PaymentState): void {
   if (!canTransition(from, to)) throw new InvalidTransitionError(from, to);
 }
 
-export function isTerminal(state: PaymentState): boolean {
-  return TRANSITIONS[state].length === 0;
-}
-
-/**
- * Which states should create or change accounting entries in NetSuite.
- * WHY: "Submitted" or "Accepted" do NOT mean money left the bank. Posting a vendor payment too early
- * would show the bill as paid while the payment could still fail. See accounting-event-matrix.md.
- */
-export const ACCOUNTING_TRIGGER_STATES: readonly PaymentState[] = ['Settled', 'Reversed'];
-
 /** One entry of a payment's history. Stored so that auditors can see who changed what, and when. */
 export interface StateChange {
   from: PaymentState;

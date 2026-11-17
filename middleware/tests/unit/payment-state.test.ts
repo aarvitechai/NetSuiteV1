@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import {
   canTransition,
   InvalidTransitionError,
-  isTerminal,
   PAYMENT_STATES,
   transition,
 } from '../../src/domain/payment-state';
@@ -35,9 +34,11 @@ describe('payment state machine', () => {
   });
 
   it('treats Failed and Reversed as terminal', () => {
-    expect(isTerminal('Failed')).toBe(true);
-    expect(isTerminal('Reversed')).toBe(true);
-    for (const s of PAYMENT_STATES) expect(canTransition('Failed', s)).toBe(false);
+    // Terminal = no allowed move to any other state.
+    for (const s of PAYMENT_STATES) {
+      expect(canTransition('Failed', s)).toBe(false);
+      expect(canTransition('Reversed', s)).toBe(false);
+    }
   });
 
   it('records actor and timestamp, throws on illegal moves', () => {

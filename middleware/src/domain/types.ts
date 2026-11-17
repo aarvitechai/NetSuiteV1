@@ -11,7 +11,6 @@
 
 export type Currency = string; // ISO 4217
 export type IsoDate = string; // YYYY-MM-DD
-export type IsoDateTime = string; // full ISO 8601 timestamp
 export type DecimalString = string;
 
 export type PaymentRail = 'ACH' | 'WIRE' | 'VCARD';

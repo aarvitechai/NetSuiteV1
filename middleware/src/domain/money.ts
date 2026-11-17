@@ -58,11 +58,6 @@ export function add(a: Money, b: Money): Money {
   return { amount: a.amount.plus(b.amount), currency: a.currency };
 }
 
-export function subtract(a: Money, b: Money): Money {
-  assertSameCurrency(a, b);
-  return { amount: a.amount.minus(b.amount), currency: a.currency };
-}
-
 /** Sums a list. An empty list needs to know its currency, so it is passed explicitly. */
 export function sum(items: Money[], currency: string): Money {
   return items.reduce((acc, m) => add(acc, m), money('0', currency));
@@ -70,10 +65,6 @@ export function sum(items: Money[], currency: string): Money {
 
 export function equals(a: Money, b: Money): boolean {
   return a.currency === b.currency && a.amount.equals(b.amount);
-}
-
-export function isPositive(m: Money): boolean {
-  return m.amount.greaterThan(0);
 }
 
 /**
@@ -87,9 +78,4 @@ export function toMinorUnits(m: Money): string {
 /** Formats with the currency's fixed number of decimals: "12.3" → "12.30". Used in APIs and files. */
 export function format(m: Money): string {
   return m.amount.toFixed(minorUnitsFor(m.currency));
-}
-
-/** JSON-friendly representation used in API responses. */
-export function toJSON(m: Money): { amount: string; currency: string } {
-  return { amount: format(m), currency: m.currency };
 }

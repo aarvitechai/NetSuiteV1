@@ -7,24 +7,18 @@ import type { Express } from 'express';
 import request from 'supertest';
 import { describe, expect, it } from 'vitest';
 import { BankSimulator, type BankBehaviour } from '../../../simulators/bank/bank-simulator';
-import { auth, makeTestContext, TOKENS } from '../helpers';
+import { auth, deliverWebhooks, makeTestContext, pollBank, TOKENS } from '../helpers';
 
 let k = 0;
 const key = () => `recon-${++k}-${Date.now()}`;
-const poll = (app: Express) => request(app).post('/api/v1/bank/inbound/poll').set(auth(TOKENS.ops));
+const poll = pollBank;
 
 /** Runs the AP flow up to settlement, and optionally the AR flow up to provider settlement. */
 async function world(opts: { behaviour?: BankBehaviour; withAr?: boolean } = {}) {
   const ctx = makeTestContext();
   const { app, container } = ctx;
   const bank = new BankSimulator(container.files, opts.behaviour);
-  container.provider.setDeliver(async (raw, signature) => {
-    await request(app)
-      .post('/webhooks/payment-provider')
-      .set('Content-Type', 'application/json')
-      .set('X-Signature', signature)
-      .send(raw);
-  });
+  deliverWebhooks(app, container);
 
   const batch = (
     await request(app)
@@ -226,13 +220,7 @@ describe('reconciliation: returns, late postings and quarantine replay', () => {
   it('statement arrives before NetSuite has the deposit → exception; after replaying the DLQ, rematch resolves it', async () => {
     const ctx = makeTestContext();
     const { app, container, netsuite } = ctx;
-    container.provider.setDeliver(async (raw, signature) => {
-      await request(app)
-        .post('/webhooks/payment-provider')
-        .set('Content-Type', 'application/json')
-        .set('X-Signature', signature)
-        .send(raw);
-    });
+    deliverWebhooks(app, container);
     const intent = (
       await request(app)
         .post('/api/v1/payment-intents')

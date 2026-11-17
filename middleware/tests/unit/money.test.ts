@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { add, equals, format, money, MoneyError, subtract, sum, toMinorUnits } from '../../src/domain/money';
+import { add, equals, format, money, MoneyError, sum, toMinorUnits } from '../../src/domain/money';
 
 describe('money', () => {
   it('adds without floating-point error (0.10 + 0.20 = 0.30 exactly)', () => {
@@ -28,10 +28,9 @@ describe('money', () => {
     expect(toMinorUnits(money('500', 'JPY'))).toBe('500');
   });
 
-  it('sums lists and subtracts', () => {
+  it('sums lists, including an empty list', () => {
     const s = sum([money('100.00', 'USD'), money('23.45', 'USD')], 'USD');
     expect(format(s)).toBe('123.45');
-    expect(format(subtract(s, money('3.45', 'USD')))).toBe('120.00');
     expect(format(sum([], 'USD'))).toBe('0.00');
   });
 });

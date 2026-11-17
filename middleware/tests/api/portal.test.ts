@@ -9,17 +9,11 @@ import { MockNetSuiteAdapter } from '../../src/adapters/netsuite/mock-netsuite';
 import { createApp } from '../../src/app';
 import { createContainer } from '../../src/container';
 import { loadConfig } from '../../src/shared/config';
-import { auth, makeTestContext, TOKENS } from '../helpers';
+import { auth, deliverWebhooks, makeTestContext, TOKENS } from '../helpers';
 
 function setup() {
   const ctx = makeTestContext();
-  ctx.container.provider.setDeliver(async (raw, signature) => {
-    await request(ctx.app)
-      .post('/webhooks/payment-provider')
-      .set('Content-Type', 'application/json')
-      .set('X-Signature', signature)
-      .send(raw);
-  });
+  deliverWebhooks(ctx.app, ctx.container);
   return ctx;
 }
 

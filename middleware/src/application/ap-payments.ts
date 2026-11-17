@@ -48,7 +48,8 @@ export const TOPIC_FLAG_BILLS = 'netsuite.bills.flag';
 export const TOPIC_POST_VENDOR_PAYMENT = 'netsuite.vendor_payment.post';
 export const TOPIC_REVERSE_VENDOR_PAYMENT = 'netsuite.vendor_payment.reverse';
 
-const OPEN_BATCH_STATUSES: BatchStatus[] = ['PENDING_APPROVAL', 'APPROVED', 'SUBMITTED', 'ACKNOWLEDGED'];
+/** Instruction states in which the bills are "taken": they must not be proposed for another batch. */
+const LIVE_INSTRUCTION_STATES: PaymentState[] = ['Validated', 'Approved', 'Submitted', 'Accepted', 'Settled'];
 const FINAL_INSTRUCTION_STATES: PaymentState[] = ['Settled', 'Reconciled', 'Failed', 'Reversed'];
 
 export interface ProposalCriteria {
@@ -115,18 +116,61 @@ export class ApPaymentService {
 
   // ------------------------------------------------------------------ proposal
 
-  /** Bill IDs already inside open (not finished) batches: the middleware's own double-payment guard. */
+  /**
+   * Bill IDs already inside a live payment instruction: the middleware's own double-payment guard.
+   * One indexed query per live status, so the cost does not grow with the number of batches.
+   */
   private async billsInOpenBatches(): Promise<Set<string>> {
     const ids = new Set<string>();
-    for (const status of OPEN_BATCH_STATUSES) {
-      for (const b of await this.batches().list({ status })) {
-        for (const i of await this.instructions().list({ batchId: b.id })) {
-          if (!['Failed', 'Reversed'].includes(i.status))
-            i.applications.forEach((a) => ids.add(a.docExternalId));
-        }
+    for (const status of LIVE_INSTRUCTION_STATES) {
+      for (const i of await this.instructions().list({ status })) {
+        i.applications.forEach((a) => ids.add(a.docExternalId));
       }
     }
     return ids;
+  }
+
+  /**
+   * Saves a batch, its instructions, one audit event and any follow-up messages in ONE transaction,
+   * then delivers the follow-ups. Every batch state change goes through here, so the rule
+   * "state + audit + follow-up work are atomic" (outbox pattern) is enforced in a single place.
+   */
+  private async saveBatch(
+    batch: PaymentBatch,
+    instructions: PaymentInstruction[],
+    audit: { action: string; outcome?: 'SUCCESS' | 'FAILURE'; details?: Record<string, unknown> },
+    opts: {
+      isNew?: boolean;
+      bankFile?: BankFileRecord;
+      followUps?: { topic: string; payload: unknown; sourceRef: string }[];
+    } = {},
+  ): Promise<void> {
+    await this.d.store.transaction(async (tx) => {
+      const batches = tx.repo<PaymentBatch>('payment_batches');
+      const items = this.instructions(tx);
+      if (opts.isNew) {
+        await batches.insert(batch);
+        for (const i of instructions) await items.insert(i);
+      } else {
+        await batches.upsert(batch);
+        for (const i of instructions) await items.upsert(i);
+      }
+      if (opts.bankFile) await tx.repo<BankFileRecord>('bank_files').insert(opts.bankFile);
+      await this.d.audit.record(
+        {
+          action: audit.action,
+          entityType: 'payment_batch',
+          entityId: batch.id,
+          outcome: audit.outcome ?? 'SUCCESS',
+          details: audit.details,
+        },
+        tx,
+      );
+      for (const f of opts.followUps ?? []) {
+        await this.d.dispatcher.dispatch(f.topic, f.payload, { sourceRef: f.sourceRef, tx });
+      }
+    });
+    if (opts.followUps?.length) await this.d.dispatcher.flush();
   }
 
   private async evaluate(
@@ -266,21 +310,15 @@ export class ApPaymentService {
       history: [{ from: null, to: 'PENDING_APPROVAL', at: now.toISOString(), actor: maker }],
     };
 
-    // All-or-nothing: the batch and its instructions are saved together.
-    await this.d.store.transaction(async (tx) => {
-      await tx.repo<PaymentBatch>('payment_batches').insert(batch);
-      for (const i of instructions) await this.instructions(tx).insert(i);
-      await this.d.audit.record(
-        {
-          action: 'PAYMENT_BATCH_CREATED',
-          entityType: 'payment_batch',
-          entityId: batch.id,
-          outcome: 'SUCCESS',
-          details: { batchRef, total: batch.total, currency: batch.currency, items: batch.itemCount },
-        },
-        tx,
-      );
-    });
+    await this.saveBatch(
+      batch,
+      instructions,
+      {
+        action: 'PAYMENT_BATCH_CREATED',
+        details: { batchRef, total: batch.total, currency: batch.currency, items: batch.itemCount },
+      },
+      { isNew: true },
+    );
     return { ...batch, instructions };
   }
 
@@ -346,11 +384,8 @@ export class ApPaymentService {
       throw new ConflictError('ILLEGAL_STATE_TRANSITION', `Batch is ${batch.status}`);
 
     // Bills may have changed since the batch was created (put on hold, paid elsewhere…). Re-check them.
-    const { decisions } = await this.evaluate({
-      currency: batch.currency,
-      rail: batch.rail,
-      windowDays: 3650,
-    });
+    // The due-date window is irrelevant here (NOT_DUE is ignored below: due dates were checked at creation).
+    const { decisions } = await this.evaluate({ currency: batch.currency, rail: batch.rail, windowDays: 0 });
     const byId = new Map(decisions.map((x) => [x.bill.externalId, x]));
     const problems = instructions
       .flatMap((i) => i.applications)
@@ -379,19 +414,9 @@ export class ApPaymentService {
     instructions.forEach((i) => this.moveInstruction(i, 'Approved', `approved by ${batch.checkerId}`));
     batch.approvedHash = contentHash(batch, instructions);
 
-    await this.d.store.transaction(async (tx) => {
-      await tx.repo<PaymentBatch>('payment_batches').upsert(batch);
-      for (const i of instructions) await this.instructions(tx).upsert(i);
-      await this.d.audit.record(
-        {
-          action: 'PAYMENT_BATCH_APPROVED',
-          entityType: 'payment_batch',
-          entityId: id,
-          outcome: 'SUCCESS',
-          details: { batchRef: batch.batchRef, hash: batch.approvedHash },
-        },
-        tx,
-      );
+    await this.saveBatch(batch, instructions, {
+      action: 'PAYMENT_BATCH_APPROVED',
+      details: { batchRef: batch.batchRef, hash: batch.approvedHash },
     });
     return { ...batch, instructions };
   }
@@ -407,20 +432,7 @@ export class ApPaymentService {
     this.moveBatch(batch, 'REJECTED', reason);
     batch.rejectionReason = reason;
     instructions.forEach((i) => this.moveInstruction(i, 'Draft', `batch rejected: ${reason}`));
-    await this.d.store.transaction(async (tx) => {
-      await tx.repo<PaymentBatch>('payment_batches').upsert(batch);
-      for (const i of instructions) await this.instructions(tx).upsert(i);
-      await this.d.audit.record(
-        {
-          action: 'PAYMENT_BATCH_REJECTED',
-          entityType: 'payment_batch',
-          entityId: id,
-          outcome: 'SUCCESS',
-          details: { reason },
-        },
-        tx,
-      );
-    });
+    await this.saveBatch(batch, instructions, { action: 'PAYMENT_BATCH_REJECTED', details: { reason } });
     return { ...batch, instructions };
   }
 
@@ -487,29 +499,22 @@ export class ApPaymentService {
       i.traceNumber = built.traceNumbers[i.id];
       this.moveInstruction(i, 'Submitted', `file ${built.name}`);
     }
-    await this.d.store.transaction(async (tx) => {
-      await tx.repo<BankFileRecord>('bank_files').insert({
-        id: bankFileId,
-        direction: 'OUTBOUND',
-        status: 'CREATED',
-        name: built.name,
-        checksum,
-        batchRef: batch.batchRef,
-        createdAt: batch.submittedAt,
-      });
-      await tx.repo<PaymentBatch>('payment_batches').upsert(batch);
-      for (const i of instructions) await this.instructions(tx).upsert(i);
-      await this.d.audit.record(
-        {
-          action: 'PAYMENT_BATCH_SUBMITTED',
-          entityType: 'payment_batch',
-          entityId: id,
-          outcome: 'SUCCESS',
-          details: { file: built.name, sha256: checksum },
+    await this.saveBatch(
+      batch,
+      instructions,
+      { action: 'PAYMENT_BATCH_SUBMITTED', details: { file: built.name, sha256: checksum } },
+      {
+        bankFile: {
+          id: bankFileId,
+          direction: 'OUTBOUND',
+          status: 'CREATED',
+          name: built.name,
+          checksum,
+          batchRef: batch.batchRef,
+          createdAt: batch.submittedAt,
         },
-        tx,
-      );
-    });
+      },
+    );
 
     // 4. Deliver to the bank.
     await this.transmit(batch);
@@ -535,12 +540,11 @@ export class ApPaymentService {
 
   // ------------------------------------------------------------------ bank responses
 
+  /** Direct indexed lookup (batchRef is indexed; see migrations/002_batch_ref_index.sql). */
   private async findBatchByRef(batchRef: string): Promise<BatchView> {
-    for (const status of ['SUBMITTED', 'ACKNOWLEDGED', 'COMPLETED', 'FAILED'] as BatchStatus[]) {
-      const b = (await this.batches().list({ status })).find((x) => x.batchRef === batchRef);
-      if (b) return this.getBatch(b.id);
-    }
-    throw new NotFoundError(`Batch with reference ${batchRef}`);
+    const [b] = await this.batches().list({ batchRef }, { limit: 1 });
+    if (!b) throw new NotFoundError(`Batch with reference ${batchRef}`);
+    return this.getBatch(b.id);
   }
 
   private matchRef(i: PaymentInstruction, ref: string): boolean {
@@ -574,29 +578,26 @@ export class ApPaymentService {
       ack.status === 'REJECTED' ? ack.reason : undefined,
     );
 
-    await this.d.store.transaction(async (tx) => {
-      await tx.repo<PaymentBatch>('payment_batches').upsert(batch);
-      for (const i of instructions) await this.instructions(tx).upsert(i);
-      await this.d.audit.record(
-        {
-          action: 'BANK_ACK_PROCESSED',
-          entityType: 'payment_batch',
-          entityId: batch.id,
-          outcome: rejected ? 'FAILURE' : 'SUCCESS',
-          details: { fileStatus: ack.status, accepted, rejected },
-        },
-        tx,
-      );
-      // Rejected payments never moved money: release their bills so they can be paid in a later batch.
-      // Enqueued INSIDE the transaction (outbox): the release cannot be lost if we crash after commit.
-      if (released.length)
-        await this.d.dispatcher.dispatch(
-          TOPIC_FLAG_BILLS,
-          { billIds: released, inProgress: false, batchRef: '' },
-          { sourceRef: batch.batchRef, tx },
-        );
-    });
-    await this.d.dispatcher.flush();
+    // Rejected payments never moved money: release their bills so they can be paid in a later batch.
+    const followUps = released.length
+      ? [
+          {
+            topic: TOPIC_FLAG_BILLS,
+            payload: { billIds: released, inProgress: false, batchRef: '' },
+            sourceRef: batch.batchRef,
+          },
+        ]
+      : [];
+    await this.saveBatch(
+      batch,
+      instructions,
+      {
+        action: 'BANK_ACK_PROCESSED',
+        outcome: rejected ? 'FAILURE' : 'SUCCESS',
+        details: { fileStatus: ack.status, accepted, rejected },
+      },
+      { followUps },
+    );
     return { accepted, rejected };
   }
 
@@ -643,34 +644,28 @@ export class ApPaymentService {
     ) {
       this.moveBatch(batch, 'COMPLETED');
     }
-    await this.d.store.transaction(async (tx) => {
-      await tx.repo<PaymentBatch>('payment_batches').upsert(batch);
-      for (const i of instructions) await this.instructions(tx).upsert(i);
-      await this.d.audit.record(
-        {
-          action: 'BANK_STATUS_PROCESSED',
-          entityType: 'payment_batch',
-          entityId: batch.id,
-          outcome: 'SUCCESS',
-          details: { settled: toPost.length, returned: toReverse.length, ignored },
-        },
-        tx,
-      );
-      // Outbox: "Settled" and "post the Vendor Payment" are saved together, atomically.
-      for (const id of toPost)
-        await this.d.dispatcher.dispatch(
-          TOPIC_POST_VENDOR_PAYMENT,
-          { instructionId: id },
-          { sourceRef: id, tx },
-        );
-      for (const id of toReverse)
-        await this.d.dispatcher.dispatch(
-          TOPIC_REVERSE_VENDOR_PAYMENT,
-          { instructionId: id },
-          { sourceRef: id, tx },
-        );
-    });
-    await this.d.dispatcher.flush();
+    // Outbox: "Settled" and "post the Vendor Payment" are saved together, atomically.
+    const followUps = [
+      ...toPost.map((id) => ({
+        topic: TOPIC_POST_VENDOR_PAYMENT,
+        payload: { instructionId: id },
+        sourceRef: id,
+      })),
+      ...toReverse.map((id) => ({
+        topic: TOPIC_REVERSE_VENDOR_PAYMENT,
+        payload: { instructionId: id },
+        sourceRef: id,
+      })),
+    ];
+    await this.saveBatch(
+      batch,
+      instructions,
+      {
+        action: 'BANK_STATUS_PROCESSED',
+        details: { settled: toPost.length, returned: toReverse.length, ignored },
+      },
+      { followUps },
+    );
     return { settled: toPost.length, returned: toReverse.length, ignored };
   }
 

@@ -23,7 +23,7 @@ import type {
   ReconciliationRecordInput,
   UpsertResult,
 } from '../../application/ports/netsuite';
-import type { Customer, IntegrationStatus, Invoice, Vendor, VendorBill } from '../../domain/types';
+import type { Customer, Invoice, Vendor, VendorBill } from '../../domain/types';
 import { TransientError } from '../../shared/errors';
 import { NetSuiteBusinessError } from './errors';
 
@@ -39,8 +39,6 @@ interface Fault {
 
 interface StoredTxn extends NsTransactionSummary {
   applications: { docExternalId: string; amount: string }[];
-  integrationStatus?: IntegrationStatus;
-  detail?: Record<string, string | undefined>;
 }
 
 function readSeed<T>(file: string): T[] {
@@ -367,7 +365,7 @@ export class MockNetSuiteAdapter implements NetSuitePort {
     this.enter('listTransactions');
     return [...this.txns.values()]
       .filter((t) => t.tranDate >= fromDate && t.tranDate <= toDate)
-      .map(({ applications: _a, integrationStatus: _s, detail: _d, ...summary }) => ({ ...summary }));
+      .map(({ applications: _a, ...summary }) => ({ ...summary }));
   }
 
   async recordReconciliation(input: ReconciliationRecordInput): Promise<UpsertResult> {
@@ -377,20 +375,5 @@ export class MockNetSuiteAdapter implements NetSuitePort {
     const internalId = this.id();
     this.reconRecords.set(input.matchId, { ...input, internalId });
     return { internalId, externalId: input.matchId, created: true };
-  }
-
-  async updateIntegrationStatus(
-    recordType: string,
-    externalId: string,
-    status: IntegrationStatus,
-    detail?: { correlationId?: string; errorDetail?: string; providerRef?: string },
-  ): Promise<void> {
-    this.enter('updateIntegrationStatus');
-    const t = [...this.txns.values()].find((x) => x.externalId === externalId);
-    if (t) {
-      t.integrationStatus = status;
-      t.detail = { ...detail };
-    }
-    void recordType;
   }
 }

@@ -2,12 +2,14 @@
  * Operations endpoints (role ops):
  *   GET /metrics                Prometheus metrics (HTTP traffic and latency, plus the gauges below)
  *   GET /api/v1/ops/dashboard   one JSON snapshot of integration health: the "monitoring dashboard"
+ *   GET /api/v1/audit           audit trail by entity or by correlation ID (ops, ap_checker)
  *
  * Every number here maps to an SLI or alert in docs/operations/slos-and-alerts.md.
  */
 import { Router } from 'express';
+import { z } from 'zod';
 import type { Container } from '../../container';
-import { authenticate, requireRole } from '../http';
+import { authenticate, parse, requireRole } from '../http';
 
 async function snapshot(c: Container) {
   const count = async (
@@ -54,6 +56,26 @@ export function opsRoutes(c: Container): Router {
   r.get('/api/v1/ops/dashboard', ...guard, async (_req, res) => {
     res.json(await snapshot(c));
   });
+
+  r.get(
+    '/api/v1/audit',
+    authenticate(c.config.API_TOKENS),
+    requireRole('ops', 'ap_checker'),
+    async (req, res) => {
+      const q = parse(
+        z.union([
+          z.object({ entityType: z.string().min(1).max(50), entityId: z.string().min(1).max(100) }),
+          z.object({ correlationId: z.string().min(8).max(100) }),
+        ]),
+        req.query,
+      );
+      const items =
+        'correlationId' in q
+          ? await c.audit.byCorrelation(q.correlationId)
+          : await c.audit.forEntity(q.entityType, q.entityId);
+      res.json({ items });
+    },
+  );
 
   r.get('/metrics', ...guard, async (_req, res) => {
     const s = await snapshot(c);

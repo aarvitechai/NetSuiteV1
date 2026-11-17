@@ -6,10 +6,12 @@
  */
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import type { Express } from 'express';
 import pino from 'pino';
+import request from 'supertest';
 import { MockNetSuiteAdapter } from '../src/adapters/netsuite/mock-netsuite';
 import { createApp } from '../src/app';
-import { createContainer, type ContainerOverrides } from '../src/container';
+import { createContainer, type Container, type ContainerOverrides } from '../src/container';
 import { MemoryStore } from '../src/infrastructure/memory/memory-store';
 import { loadConfig } from '../src/shared/config';
 import { fixedClock } from '../src/shared/util';
@@ -66,3 +68,21 @@ export function makeTestContext(overrides: ContainerOverrides = {}, config: Reco
 }
 
 export const auth = (token: string) => ({ Authorization: `Bearer ${token}` });
+
+/**
+ * Makes the simulated payment provider deliver its signed webhooks to `app` over (in-memory) HTTP,
+ * exactly like a real provider calling our public endpoint.
+ */
+export function deliverWebhooks(app: Express, container: Container): void {
+  container.provider.setDeliver(async (raw, signature) => {
+    await request(app)
+      .post('/webhooks/payment-provider')
+      .set('Content-Type', 'application/json')
+      .set('X-Signature', signature)
+      .send(raw);
+  });
+}
+
+/** Processes everything the bank simulator dropped into the SFTP inbound folder. */
+export const pollBank = (app: Express) =>
+  request(app).post('/api/v1/bank/inbound/poll').set(auth(TOKENS.ops));

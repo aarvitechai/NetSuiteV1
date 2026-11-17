@@ -78,6 +78,8 @@ export interface Settlement {
     net: DecimalString;
   }[];
   netsuiteDepositId?: string;
+  /** The reconciliation match that proved this payout reached the bank. */
+  reconciledBy?: string;
   error?: string;
 }
 

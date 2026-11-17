@@ -36,7 +36,7 @@ flowchart TB
     NSA[netsuite: mock · REST · SOAP ref] & BANKA[bank: NACHA, files, vault, statement parsers] & PROVA[payment-provider: simulator, signatures] & SRC[source: mapping]
   end
   subgraph infra[infrastructure/]
-    ST[Store: memory · PostgreSQL] & FT[FileTransport: local SFTP] & SP[SecretProvider]
+    ST[Store: memory · PostgreSQL] & FT[FileTransport: local SFTP]
   end
   api --> app --> domain
   app --> adapters

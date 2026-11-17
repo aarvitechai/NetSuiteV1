@@ -8,7 +8,7 @@
     "node": ">=20"
   },
   "scripts": {
-    "dev": "tsx watch middleware/src/server.ts",
+    "dev": "tsx watch middleware/src/server.ts | pino-pretty",
     "start": "node dist/middleware/src/server.js",
     "build": "tsc -p tsconfig.build.json && node scripts/copy-assets.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
