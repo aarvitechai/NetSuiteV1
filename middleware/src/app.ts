@@ -16,6 +16,7 @@ import { healthRoutes } from './api/routes/health';
 import { integrationRoutes } from './api/routes/integration';
 import { masterDataRoutes } from './api/routes/master-data';
 import { portalRoutes } from './api/routes/portal';
+import { reconciliationRoutes } from './api/routes/reconciliation';
 import { webhookRoutes } from './api/routes/webhooks';
 import { NotFoundError } from './shared/errors';
 
@@ -67,6 +68,7 @@ export function createApp(c: Container): express.Express {
   api.use(apRoutes(c));
   api.use(arRoutes(c));
   api.use(portalRoutes(c));
+  api.use(reconciliationRoutes(c));
   app.use('/api/v1', api);
 
   app.use((req, _res, next) => next(new NotFoundError(`Route ${req.method} ${req.path}`)));

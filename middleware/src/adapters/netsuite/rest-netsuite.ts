@@ -24,6 +24,7 @@ import type {
   CreateVendorPaymentInput,
   NetSuitePort,
   NsTransactionSummary,
+  ReconciliationRecordInput,
   UpsertResult,
 } from '../../application/ports/netsuite';
 import type { Customer, IntegrationStatus, Invoice, Vendor, VendorBill } from '../../domain/types';
@@ -449,6 +450,25 @@ export class NetSuiteRestAdapter implements NetSuitePort {
       currency: r.currency!,
       providerRef: r.provider_ref || undefined,
     }));
+  }
+
+  recordReconciliation(input: ReconciliationRecordInput): Promise<UpsertResult> {
+    // Custom records are addressed by their script ID in REST, and in SuiteQL by the same name.
+    return this.createOnce(
+      'customrecord_nsd_recon_match',
+      'customrecord_nsd_recon_match',
+      input.matchId,
+      async () => ({
+        name: `${input.rule} ${input.bankLineRef}`.slice(0, 300),
+        custrecord_nsd_rm_bank_line_ref: input.bankLineRef,
+        custrecord_nsd_rm_txn_ref: input.txnExternalIds.join(',').slice(0, 300),
+        custrecord_nsd_rm_rule: input.rule,
+        custrecord_nsd_rm_confidence: Math.round(input.confidence * 100),
+        custrecord_nsd_rm_status: 'APPROVED',
+        custrecord_nsd_rm_reviewer: input.reviewer,
+        custrecord_nsd_rm_amount: Number(input.amount),
+      }),
+    );
   }
 
   async updateIntegrationStatus(

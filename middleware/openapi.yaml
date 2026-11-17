@@ -19,6 +19,7 @@ tags:
   - name: ar
   - name: webhooks
   - name: portal
+  - name: reconciliation
 paths:
   /health:
     get:
@@ -381,6 +382,109 @@ paths:
       summary: Open balance, open invoices (with overdue / payment_pending / disputed state) and payment history with plain-language status
       responses:
         '200': { description: OK }
+  /api/v1/reconciliation/statements:
+    post:
+      tags: [reconciliation]
+      summary: Import a bank statement (CSV or camt.053 XML) without SFTP
+      requestBody:
+        content:
+          {
+            application/json:
+              {
+                schema:
+                  {
+                    type: object,
+                    required: [fileName, content],
+                    properties: { fileName: { type: string }, content: { type: string } },
+                  },
+              },
+          }
+      responses:
+        '200': { description: Processing result (matched, suggested, exceptions, duplicates) }
+  /api/v1/reconciliation/lines:
+    get:
+      tags: [reconciliation]
+      summary: Bank statement lines
+      parameters:
+        [
+          {
+            name: status,
+            in: query,
+            schema: { type: string, enum: [UNMATCHED, MATCHED, SUGGESTED, EXCEPTION] },
+          },
+        ]
+      responses:
+        '200': { description: OK }
+  /api/v1/reconciliation/matches:
+    get:
+      tags: [reconciliation]
+      summary: Matches, suggestions and exceptions
+      parameters: [{ name: status, in: query, schema: { type: string } }]
+      responses:
+        '200': { description: OK }
+  /api/v1/reconciliation/matches/{id}/approve:
+    post:
+      tags: [reconciliation]
+      summary: Approve a suggested match (role finance)
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses:
+        '200': { description: APPROVED }
+  /api/v1/reconciliation/matches/{id}/reject:
+    post:
+      tags: [reconciliation]
+      summary: Reject a suggestion; the line returns to the exception queue (role finance)
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses:
+        '200': { description: REJECTED }
+  /api/v1/reconciliation/manual-match:
+    post:
+      tags: [reconciliation]
+      summary: Manually match bank lines to NetSuite transactions; totals must be equal (role finance)
+      requestBody:
+        content:
+          application/json:
+            schema:
+              {
+                type: object,
+                required: [bankLineIds, nsExternalIds, reason],
+                properties:
+                  {
+                    bankLineIds: { type: array, items: { type: string } },
+                    nsExternalIds: { type: array, items: { type: string } },
+                    reason: { type: string },
+                  },
+              }
+      responses:
+        '200': { description: APPROVED match }
+        '422': { description: RECON_AMOUNT_MISMATCH or CANDIDATE_NOT_AVAILABLE }
+  /api/v1/reconciliation/rematch:
+    post:
+      tags: [reconciliation]
+      summary: Re-run matching for the exception queue (after late NetSuite postings)
+      responses:
+        '200': { description: OK }
+  /api/v1/reconciliation/report:
+    get:
+      tags: [reconciliation]
+      summary: Reconciliation report for a period
+      parameters:
+        - { name: from, in: query, required: true, schema: { type: string, format: date } }
+        - { name: to, in: query, required: true, schema: { type: string, format: date } }
+      responses:
+        '200': { description: OK }
+  /api/v1/bank/files/quarantine:
+    get:
+      tags: [reconciliation]
+      summary: Quarantined inbound files
+      responses:
+        '200': { description: OK }
+  /api/v1/bank/files/quarantine/{name}/replay:
+    post:
+      tags: [reconciliation]
+      summary: Re-process a quarantined file
+      parameters: [{ name: name, in: path, required: true, schema: { type: string } }]
+      responses:
+        '200': { description: Processing result }
   /webhooks/payment-provider:
     post:
       tags: [webhooks]

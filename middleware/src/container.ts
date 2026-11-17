@@ -18,6 +18,7 @@ import { JobRunner } from './application/jobs';
 import { MasterDataSyncService } from './application/master-data-sync';
 import type { NetSuitePort } from './application/ports/netsuite';
 import type { Store } from './application/ports/store';
+import { ReconciliationService } from './application/reconciliation';
 import { WebhookService } from './application/webhooks';
 import { SimulatedPaymentProvider } from './adapters/payment-provider/simulated-provider';
 import { DEFAULT_RETRY, type RetryPolicy } from './application/retry';
@@ -52,6 +53,7 @@ export interface Container {
   webhooks: WebhookService;
   collections: CollectionsService;
   notifier: Notifier;
+  reconciliation: ReconciliationService;
 }
 
 export interface ContainerOverrides {
@@ -126,6 +128,10 @@ export function createContainer(config: AppConfig, overrides: ContainerOverrides
   const notifier = overrides.notifier ?? new RecordingNotifier();
   const collections = new CollectionsService(netsuite, store, audit, notifier, clock);
 
+  const reconciliation = new ReconciliationService(store, netsuite, audit, jobs, dispatcher, clock);
+  // Statement files arriving via SFTP are routed to reconciliation.
+  bankInbound.onStatement((name, content, fileId) => reconciliation.importStatement(name, content, fileId));
+
   return {
     config,
     logger,
@@ -146,5 +152,6 @@ export function createContainer(config: AppConfig, overrides: ContainerOverrides
     webhooks,
     collections,
     notifier,
+    reconciliation,
   };
 }

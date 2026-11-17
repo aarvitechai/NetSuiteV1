@@ -55,6 +55,32 @@ export class BankInboundService {
     return this.store.repo<BankFileRecord>('bank_files');
   }
 
+  /** Puts a file received by other means (e.g. an upload API) into inbound and processes it like any SFTP file. */
+  async ingest(name: string, content: string): Promise<PollResult> {
+    await this.files.put('inbound', name, content);
+    return this.processOne(name);
+  }
+
+  /**
+   * Replays a QUARANTINED file after the cause was fixed (e.g. a parser bug was deployed, or the bank
+   * resent a corrected file under the same name). It moves the file back to inbound and processes it again.
+   */
+  async replayQuarantined(name: string): Promise<PollResult> {
+    await this.files.move('quarantine', name, 'inbound');
+    await this.audit.record({
+      action: 'BANK_FILE_REPLAY',
+      entityType: 'bank_file',
+      entityId: name,
+      outcome: 'SUCCESS',
+      source: 'bank-inbound',
+    });
+    return this.processOne(name);
+  }
+
+  listQuarantined(): Promise<string[]> {
+    return this.files.list('quarantine');
+  }
+
   async poll(): Promise<PollResult[]> {
     const results: PollResult[] = [];
     for (const name of await this.files.list('inbound')) results.push(await this.processOne(name));

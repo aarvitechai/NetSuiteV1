@@ -9,7 +9,7 @@
 import { z } from 'zod';
 
 /** Roles used for authorization. Keeping them in one place avoids typos like "ap-maker" vs "ap_maker". */
-export const ROLES = ['ap_maker', 'ap_checker', 'ar_clerk', 'ops', 'customer'] as const;
+export const ROLES = ['ap_maker', 'ap_checker', 'ar_clerk', 'finance', 'ops', 'customer'] as const;
 export type Role = (typeof ROLES)[number];
 
 export interface ApiToken {

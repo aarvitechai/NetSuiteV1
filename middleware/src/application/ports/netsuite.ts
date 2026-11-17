@@ -82,6 +82,17 @@ export interface NsTransactionSummary {
   voided?: boolean;
 }
 
+/** An approved reconciliation result, stored in NetSuite as customrecord_nsd_recon_match. */
+export interface ReconciliationRecordInput {
+  matchId: string; // externalId of the custom record → idempotent
+  bankLineRef: string;
+  txnExternalIds: string[];
+  rule: string;
+  confidence: number;
+  amount: DecimalString;
+  reviewer: string;
+}
+
 export interface NetSuitePort {
   readonly kind: 'mock' | 'rest' | 'soap';
 
@@ -122,5 +133,7 @@ export interface NetSuitePort {
     status: IntegrationStatus,
     detail?: { correlationId?: string; errorDetail?: string; providerRef?: string },
   ): Promise<void>;
+  /** Stores an APPROVED reconciliation match in NetSuite (custom record), so finance sees it there. */
+  recordReconciliation(input: ReconciliationRecordInput): Promise<UpsertResult>;
   ping(): Promise<void>;
 }

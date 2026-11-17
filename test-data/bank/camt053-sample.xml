@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Synthetic ISO 20022 camt.053 statement. Opening 100000.00 - 1250.00 - 480.50 + 3786.30 - 25.00 = closing 102030.80 -->
+<Document xmlns="urn:iso:std:iso:20022:tech:xsd:camt.053.001.08">
+  <BkToCstmrStmt>
+    <GrpHdr><MsgId>SAMPLE-2026-11-23</MsgId><CreDtTm>2026-11-23T23:59:00Z</CreDtTm></GrpHdr>
+    <Stmt>
+      <Id>STMT-2026-11-23</Id>
+      <Acct><Id><Othr><Id>NSD-OPERATING-001</Id></Othr></Id><Ccy>USD</Ccy></Acct>
+      <Bal><Tp><CdOrPrtry><Cd>OPBD</Cd></CdOrPrtry></Tp><Amt Ccy="USD">100000.00</Amt><CdtDbtInd>CRDT</CdtDbtInd><Dt><Dt>2026-11-23</Dt></Dt></Bal>
+      <Bal><Tp><CdOrPrtry><Cd>CLBD</Cd></CdOrPrtry></Tp><Amt Ccy="USD">102030.80</Amt><CdtDbtInd>CRDT</CdtDbtInd><Dt><Dt>2026-11-23</Dt></Dt></Bal>
+      <Ntry><Amt Ccy="USD">1250.00</Amt><CdtDbtInd>DBIT</CdtDbtInd><Sts><Cd>BOOK</Cd></Sts><BookgDt><Dt>2026-11-23</Dt></BookgDt><AcctSvcrRef>BNK00000001</AcctSvcrRef>
+        <NtryDtls><TxDtls><Refs><EndToEndId>110000000000001</EndToEndId></Refs><RmtInf><Ustrd>ACH CREDIT VEND-ACMESUP</Ustrd></RmtInf></TxDtls></NtryDtls></Ntry>
+      <Ntry><Amt Ccy="USD">480.50</Amt><CdtDbtInd>DBIT</CdtDbtInd><Sts><Cd>BOOK</Cd></Sts><BookgDt><Dt>2026-11-23</Dt></BookgDt><AcctSvcrRef>BNK00000002</AcctSvcrRef>
+        <NtryDtls><TxDtls><Refs><EndToEndId>110000000000002</EndToEndId></Refs><RmtInf><Ustrd>ACH CREDIT VEND-BOLTCO</Ustrd></RmtInf></TxDtls></NtryDtls></Ntry>
+      <Ntry><Amt Ccy="USD">3786.30</Amt><CdtDbtInd>CRDT</CdtDbtInd><Sts><Cd>BOOK</Cd></Sts><BookgDt><Dt>2026-11-23</Dt></BookgDt><AcctSvcrRef>BNKPAYOUT1</AcctSvcrRef>
+        <NtryDtls><TxDtls><Refs><EndToEndId>po_20261123_abc123</EndToEndId></Refs><RmtInf><Ustrd>SIMPAY PAYOUT</Ustrd></RmtInf></TxDtls></NtryDtls></Ntry>
+      <Ntry><Amt Ccy="USD">25.00</Amt><CdtDbtInd>DBIT</CdtDbtInd><Sts><Cd>BOOK</Cd></Sts><BookgDt><Dt>2026-11-23</Dt></BookgDt><AcctSvcrRef>BNKFEE1</AcctSvcrRef>
+        <NtryDtls><TxDtls><RmtInf><Ustrd>MONTHLY SERVICE FEE</Ustrd></RmtInf></TxDtls></NtryDtls></Ntry>
+    </Stmt>
+  </BkToCstmrStmt>
+</Document>

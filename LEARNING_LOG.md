@@ -248,3 +248,31 @@ One entry per phase: what was built, the key concepts, and answers to the plan's
    account's SC version and the documented extension points. See `portal/scma-extension/README.md`.
 3. *Pending versus settled?* "Payment received – processing" while the payment is succeeded but not
    settled. "Completed" once the settlement Deposit is posted.
+
+## Phase 10 — Bank integration, reconciliation and settlement
+
+**What I built**
+
+- CSV and camt.053 parsers. They reject DOCTYPE/ENTITY, keep amounts as strings, and check
+  balance integrity.
+- Duplicate-line detection keyed by bank reference.
+- Matching engine with these rules: EXACT_REF, GROUP_REF (one-to-many), SPLIT_REF (many-to-one),
+  AMOUNT_DATE, and exceptions for mismatch, ambiguous and unmatched lines. Each match gets a
+  confidence score.
+- Auto-approval threshold.
+- Finance approve and reject.
+- Manual matching that must balance.
+- Rematch after late postings.
+- Finalization: instructions move to Reconciled and a NetSuite custom record is created.
+- Reconciliation report.
+- Quarantine replay.
+- Bank simulator statements (CSV and camt.053, with optional ACH aggregation).
+- Sample statements.
+
+**Review questions** (see `docs/architecture/reconciliation.md`)
+
+1. *Settlement versus reconciliation?* Settlement is a claim that money moved. Reconciliation is
+   independent proof of it from the bank statement.
+2. *One-to-many and many-to-one?* Handled by the GROUP_REF and SPLIT_REF rules, or by a manual match.
+   In every case the totals must be exactly equal.
+3. *Which unmatched items need human approval?* Everything below 0.95 confidence, and every exception.

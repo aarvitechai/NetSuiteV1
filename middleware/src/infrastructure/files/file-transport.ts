@@ -14,6 +14,7 @@
  */
 import { mkdir, readdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
+import { ValidationError } from '../../shared/errors';
 
 /** 'bank/received' is used only by the bank SIMULATOR to keep the files it picked up. */
 export type Folder =
@@ -33,7 +34,7 @@ export interface FileTransport {
  */
 export function assertSafeName(name: string): void {
   if (!/^[A-Za-z0-9][A-Za-z0-9._-]{0,200}$/.test(name) || name.includes('..')) {
-    throw new Error(`Unsafe file name "${name}"`);
+    throw new ValidationError(`Unsafe file name "${name}"`);
   }
 }
 

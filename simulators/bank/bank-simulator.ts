@@ -168,6 +168,122 @@ export class BankSimulator {
     }));
   }
 
+  /** Entries already reported on a statement (each money movement is reported exactly once). */
+  private statemented = new Set<string>();
+  private balance = '100000.00';
+
+  /**
+   * Step 3: end-of-day bank statement, written to inbound/ as CSV or camt.053 XML. It contains:
+   *   - one DEBIT per settled payment (or, with aggregateAch, ONE debit per batch, which exercises one-to-many);
+   *   - one CREDIT per returned payment (the money came back);
+   *   - any extra lines (provider payouts, bank fees…) passed in by the caller.
+   */
+  async statement(
+    date: string,
+    opts: {
+      format?: 'csv' | 'camt053';
+      aggregateAch?: boolean;
+      extra?: {
+        amount: string;
+        currency?: string;
+        reference?: string;
+        bankRef?: string;
+        description: string;
+      }[];
+    } = {},
+  ): Promise<{ name: string; content: string }> {
+    type Line = {
+      amount: string;
+      currency: string;
+      reference?: string;
+      bankRef: string;
+      description: string;
+    };
+    const out: Line[] = [];
+    const settled = this.entries.filter(
+      (e) => (e.status === 'SETTLED' || e.status === 'RETURNED') && !this.statemented.has(`${e.ref}:debit`),
+    );
+    if (opts.aggregateAch) {
+      for (const [batchRef, group] of this.group(settled)) {
+        const total = group.reduce((s, e) => s + Math.round(Number(e.amount) * 100), 0);
+        out.push({
+          amount: (-total / 100).toFixed(2),
+          currency: group[0]!.currency,
+          reference: batchRef,
+          bankRef: `BNKB${batchRef.slice(-8)}`,
+          description: `ACH BATCH ${batchRef}`,
+        });
+      }
+    } else {
+      for (const e of settled)
+        out.push({
+          amount: `-${e.amount}`,
+          currency: e.currency,
+          reference: e.ref,
+          bankRef: e.bankRef!,
+          description: `ACH CREDIT ${e.payee}`,
+        });
+    }
+    settled.forEach((e) => this.statemented.add(`${e.ref}:debit`));
+    for (const e of this.entries.filter(
+      (x) => x.status === 'RETURNED' && !this.statemented.has(`${x.ref}:return`),
+    )) {
+      out.push({
+        amount: e.amount,
+        currency: e.currency,
+        reference: e.ref,
+        bankRef: `${e.bankRef}R`,
+        description: `ACH RETURN ${e.returnCode} ${e.payee}`,
+      });
+      this.statemented.add(`${e.ref}:return`);
+    }
+    let seq = 1;
+    for (const x of opts.extra ?? [])
+      out.push({
+        amount: x.amount,
+        currency: x.currency ?? 'USD',
+        reference: x.reference,
+        bankRef: x.bankRef ?? `BNKX${date.replace(/-/g, '')}${seq++}`,
+        description: x.description,
+      });
+
+    const opening = this.balance;
+    const closing = out.reduce(
+      (s, l) => s + Math.round(Number(l.amount) * 100),
+      Math.round(Number(opening) * 100),
+    );
+    this.balance = (closing / 100).toFixed(2);
+
+    const csvCell = (v: string) => (/[",]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v);
+    if ((opts.format ?? 'csv') === 'csv') {
+      const content =
+        [
+          'date,description,amount,currency,reference,bank_ref',
+          ...out.map((l) =>
+            [date, l.description, l.amount, l.currency, l.reference ?? '', l.bankRef].map(csvCell).join(','),
+          ),
+        ].join('\n') + '\n';
+      const name = `STMT_${date}.csv`;
+      await this.files.put('inbound', name, content);
+      return { name, content };
+    }
+    const esc = (v: string) => v.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const bal = (code: string, amount: string) =>
+      `<Bal><Tp><CdOrPrtry><Cd>${code}</Cd></CdOrPrtry></Tp><Amt Ccy="USD">${Math.abs(Number(amount)).toFixed(2)}</Amt><CdtDbtInd>${Number(amount) < 0 ? 'DBIT' : 'CRDT'}</CdtDbtInd><Dt><Dt>${date}</Dt></Dt></Bal>`;
+    const entries = out
+      .map(
+        (l) =>
+          `<Ntry><Amt Ccy="${l.currency}">${Math.abs(Number(l.amount)).toFixed(2)}</Amt><CdtDbtInd>${l.amount.startsWith('-') ? 'DBIT' : 'CRDT'}</CdtDbtInd><Sts><Cd>BOOK</Cd></Sts><BookgDt><Dt>${date}</Dt></BookgDt><ValDt><Dt>${date}</Dt></ValDt><AcctSvcrRef>${esc(l.bankRef)}</AcctSvcrRef><NtryDtls><TxDtls>${l.reference ? `<Refs><EndToEndId>${esc(l.reference)}</EndToEndId></Refs>` : ''}<RmtInf><Ustrd>${esc(l.description)}</Ustrd></RmtInf></TxDtls></NtryDtls></Ntry>`,
+      )
+      .join('');
+    const content = `<?xml version="1.0" encoding="UTF-8"?>
+<Document xmlns="urn:iso:std:iso:20022:tech:xsd:camt.053.001.08"><BkToCstmrStmt><GrpHdr><MsgId>SIM-${date}</MsgId><CreDtTm>${date}T23:59:00Z</CreDtTm></GrpHdr><Stmt><Id>STMT-${date}</Id><Acct><Id><Othr><Id>NSD-OPERATING-001</Id></Othr></Id><Ccy>USD</Ccy></Acct>${bal('OPBD', opening)}${bal('CLBD', this.balance)}${entries}</Stmt></BkToCstmrStmt></Document>
+`;
+    const name = `STMT_${date}.xml`;
+    await this.files.put('inbound', name, content);
+    return { name, content };
+  }
+
   /**
    * Step 2b: some settled ACH payments come back days later (behaviour.returnPayees), for example
    * R01 insufficient funds or R03 no account. This exercises the reversal path in NetSuite.

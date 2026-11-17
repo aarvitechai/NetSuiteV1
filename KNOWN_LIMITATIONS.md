@@ -86,3 +86,10 @@ Use it to describe the project honestly, for example in interviews.
 - The SCMA extension exists only as a design (`portal/scma-extension/README.md`).
 - Sign-in uses static test tokens. A real portal would use NetSuite shopper sessions, or OIDC.
 - The hosted checkout page is simulated (`/dev/checkout`) and is disabled in production.
+
+## Reconciliation (Phase 10)
+
+- Statement formats are a simplified CSV and a subset of camt.053 (one `TxDtls` per entry is read).
+  Real bank camt files may batch several transactions into one entry.
+- Statements come from the bank simulator or from the sample files. No bank API is integrated.
+- Bank fees and interest are not booked automatically. Finance books them in NetSuite.

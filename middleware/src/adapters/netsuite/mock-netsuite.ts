@@ -20,6 +20,7 @@ import type {
   CreateVendorPaymentInput,
   NetSuitePort,
   NsTransactionSummary,
+  ReconciliationRecordInput,
   UpsertResult,
 } from '../../application/ports/netsuite';
 import type { Customer, IntegrationStatus, Invoice, Vendor, VendorBill } from '../../domain/types';
@@ -60,6 +61,8 @@ export class MockNetSuiteAdapter implements NetSuitePort {
   private nextId = 1000;
   /** Periods (YYYY-MM) that are closed for posting. */
   readonly closedPeriods = new Set<string>();
+  /** customrecord_nsd_recon_match records, keyed by externalId (matchId). */
+  readonly reconRecords = new Map<string, ReconciliationRecordInput & { internalId: string }>();
   /** Every call, for tests that need to count NetSuite calls (e.g. "no duplicate create"). */
   readonly calls: string[] = [];
 
@@ -365,6 +368,15 @@ export class MockNetSuiteAdapter implements NetSuitePort {
     return [...this.txns.values()]
       .filter((t) => t.tranDate >= fromDate && t.tranDate <= toDate)
       .map(({ applications: _a, integrationStatus: _s, detail: _d, ...summary }) => ({ ...summary }));
+  }
+
+  async recordReconciliation(input: ReconciliationRecordInput): Promise<UpsertResult> {
+    this.enter('recordReconciliation', input.matchId);
+    const existing = this.reconRecords.get(input.matchId);
+    if (existing) return { internalId: existing.internalId, externalId: input.matchId, created: false };
+    const internalId = this.id();
+    this.reconRecords.set(input.matchId, { ...input, internalId });
+    return { internalId, externalId: input.matchId, created: true };
   }
 
   async updateIntegrationStatus(
