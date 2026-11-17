@@ -57,3 +57,14 @@ Use it to describe the project honestly, for example in interviews.
 - `voidVendorPayment` over REST flags the payment for a manual void. The void itself is a manual
   runbook step.
 - The SOAP envelope builder is reference material only. No SOAP calls are made.
+
+## AP payments (Phase 7)
+
+- The NACHA output follows the public record layout. It has **not** been certified by any bank.
+  Bank-specific rules (prenotes, holidays, cut-offs, file ID modifier sequencing) are not implemented.
+- The wire CSV and virtual-card JSONL formats are simplified stand-ins for real bank and provider
+  formats (for example ISO 20022 pain.001).
+- Bank ACK and status files are simplified JSON. Real banks send NACHA return files, pain.002 or
+  camt.054.
+- SFTP is a local folder (`LocalFolderSftp`). There is no real SSH transport.
+- The bank vault is simulated (`SimulatedVault`). It derives fake account numbers.

@@ -4,6 +4,8 @@
  * The clock is pinned to 2026-11-20 because the seed data in test-data/netsuite is written relative
  * to that date ("due within 7 days", "20 days overdue"...).
  */
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import pino from 'pino';
 import { MockNetSuiteAdapter } from '../src/adapters/netsuite/mock-netsuite';
 import { createApp } from '../src/app';
@@ -15,6 +17,8 @@ import { fixedClock } from '../src/shared/util';
 export const TOKENS = {
   maker: 'dev-maker-token',
   checker: 'dev-checker-token',
+  /** Same person as the maker (alice) holding a checker token: used to prove maker-checker is enforced. */
+  aliceChecker: 'dev-alice-checker-token',
   maker2: 'dev-maker2-token',
   ar: 'dev-ar-token',
   ops: 'dev-ops-token',
@@ -29,11 +33,13 @@ export const testConfig = () =>
     NODE_ENV: 'test',
     LOG_LEVEL: 'silent',
     WEBHOOK_SIGNING_SECRET: WEBHOOK_SECRET,
-    SFTP_ROOT: `./runtime-data/test-sftp-${process.pid}-${Math.random().toString(36).slice(2)}`,
+    // A fresh temporary folder per test context, so tests never see each other's files.
+    SFTP_ROOT: join(tmpdir(), `nsd-sftp-${process.pid}-${Math.random().toString(36).slice(2)}`),
     API_TOKENS: [
       `${TOKENS.maker}:ap_maker:alice`,
       `${TOKENS.maker2}:ap_maker:amy`,
       `${TOKENS.checker}:ap_checker:bob`,
+      `${TOKENS.aliceChecker}:ap_checker:alice`,
       `${TOKENS.ar}:ar_clerk:carol`,
       `${TOKENS.ops}:ops:olivia`,
       `${TOKENS.acme}:customer:CUST-ACME`,

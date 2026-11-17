@@ -171,3 +171,28 @@ One entry per phase: what was built, the key concepts, and answers to the plan's
    `docs/architecture/netsuite-integration.md`. In short: REST upsert (`eid:`) for master data, SuiteQL
    for reads, REST POST with `externalId` for transactions, and a RESTlet only where a narrow permission
    scope is needed.
+
+## Phase 7 — Accounts Payable and vendor payments
+
+**What I built**
+
+- eligibility rules (11 reasons)
+- payment proposal
+- batches with maker-checker approval and an immutable content hash
+- one instruction per vendor
+- NACHA generator and validator, plus wire CSV and virtual-card JSONL files
+- bank vault tokens
+- local SFTP with archive and quarantine
+- bank simulator (ACK, settle, returns)
+- inbound file processing with duplicate detection
+- NetSuite Vendor Payment created only at settlement
+- returns voided and reversed
+- runbook and sample files
+
+**Review questions** (see `docs/architecture/ap-payments.md`)
+
+1. *Acceptance versus settlement?* Acceptance means the bank agreed to process the instruction.
+   Settlement means the money actually moved.
+2. *How do you avoid paying a bill twice?* Seven layered defences: flags, open-batch check, duplicate
+   invoice check, approval re-check, content hash, idempotency keys and externalIds.
+3. *Which statuses post to NetSuite?* Only `Settled` (create the payment) and `Reversed` (void it).

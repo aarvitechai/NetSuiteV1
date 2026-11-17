@@ -7,7 +7,10 @@
  *   - configuration (STORAGE_MODE, NETSUITE_MODE) is interpreted here only, not in business code.
  */
 import type { Logger } from 'pino';
+import { ApPaymentService } from './application/ap-payments';
 import { AuditService } from './application/audit';
+import { BankInboundService } from './application/bank-inbound';
+import { DirectDispatcher, type Dispatcher } from './application/dispatcher';
 import { IdempotencyService } from './application/idempotency';
 import { JobRunner } from './application/jobs';
 import { MasterDataSyncService } from './application/master-data-sync';
@@ -16,6 +19,8 @@ import type { Store } from './application/ports/store';
 import { DEFAULT_RETRY, type RetryPolicy } from './application/retry';
 import { MockNetSuiteAdapter } from './adapters/netsuite/mock-netsuite';
 import { NetSuiteRestAdapter } from './adapters/netsuite/rest-netsuite';
+import { SimulatedVault, type BankVault } from './adapters/bank/vault';
+import { LocalFolderSftp, type FileTransport } from './infrastructure/files/file-transport';
 import { PgStore } from './infrastructure/db/pg-store';
 import { MemoryStore } from './infrastructure/memory/memory-store';
 import type { AppConfig } from './shared/config';
@@ -32,6 +37,11 @@ export interface Container {
   audit: AuditService;
   jobs: JobRunner;
   masterData: MasterDataSyncService;
+  files: FileTransport;
+  vault: BankVault;
+  dispatcher: Dispatcher;
+  ap: ApPaymentService;
+  bankInbound: BankInboundService;
 }
 
 export interface ContainerOverrides {
@@ -42,6 +52,8 @@ export interface ContainerOverrides {
   /** Tests pass `async () => {}` so retries do not actually wait. */
   sleep?: (ms: number) => Promise<void>;
   retryPolicy?: RetryPolicy;
+  files?: FileTransport;
+  vault?: BankVault;
 }
 
 function buildNetSuite(config: AppConfig): NetSuitePort {
@@ -67,6 +79,26 @@ export function createContainer(config: AppConfig, overrides: ContainerOverrides
   const audit = new AuditService(store, clock);
   const jobs = new JobRunner(store, audit, clock, logger, overrides.retryPolicy ?? DEFAULT_RETRY, { sleep });
   const masterData = new MasterDataSyncService(netsuite, jobs, audit);
+  const files = overrides.files ?? new LocalFolderSftp(config.SFTP_ROOT);
+  const vault = overrides.vault ?? new SimulatedVault();
+  const dispatcher = new DirectDispatcher(jobs);
+  const ap = new ApPaymentService({
+    store,
+    netsuite,
+    audit,
+    jobs,
+    dispatcher,
+    vault,
+    files,
+    clock,
+    logger,
+    company: {
+      companyName: config.COMPANY_NAME,
+      companyId: config.COMPANY_ID,
+      originRouting: config.ORIGIN_ROUTING,
+    },
+  });
+  const bankInbound = new BankInboundService(files, store, ap, audit, clock, logger);
 
   return {
     config,
@@ -78,5 +110,10 @@ export function createContainer(config: AppConfig, overrides: ContainerOverrides
     audit,
     jobs,
     masterData,
+    files,
+    vault,
+    dispatcher,
+    ap,
+    bankInbound,
   };
 }

@@ -15,6 +15,7 @@ tags:
   - name: master-data
   - name: audit
   - name: integration
+  - name: ap
 paths:
   /health:
     get:
@@ -192,6 +193,80 @@ paths:
           }
       responses:
         '200': { description: OK }
+  /api/v1/ap/proposal:
+    get:
+      tags: [ap]
+      summary: Eligible bills grouped per vendor, plus every excluded bill with its reasons
+      parameters:
+        - { name: currency, in: query, required: true, schema: { type: string } }
+        - { name: rail, in: query, required: true, schema: { type: string, enum: [ACH, WIRE, VCARD] } }
+        - { name: windowDays, in: query, schema: { type: integer, default: 7 } }
+      responses:
+        '200': { description: Proposal }
+  /api/v1/payment-batches:
+    get:
+      tags: [ap]
+      summary: List payment batches
+      parameters: [{ name: status, in: query, schema: { type: string } }]
+      responses:
+        '200': { description: OK }
+    post:
+      tags: [ap]
+      summary: Create a payment batch (role ap_maker). Eligibility is recomputed on the server.
+      parameters: [{ $ref: '#/components/parameters/IdempotencyKey' }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [currency, rail]
+              properties:
+                currency: { type: string }
+                rail: { type: string, enum: [ACH, WIRE, VCARD] }
+                windowDays: { type: integer }
+                billExternalIds: { type: array, items: { type: string } }
+      responses:
+        '201': { description: Batch PENDING_APPROVAL with instructions }
+        '422': { $ref: '#/components/responses/Error' }
+  /api/v1/payment-batches/{id}:
+    get:
+      tags: [ap]
+      summary: Batch with its instructions
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses:
+        '200': { description: OK }
+  /api/v1/payment-batches/{id}/approve:
+    post:
+      tags: [ap]
+      summary: Approve (role ap_checker; must not be the maker)
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses:
+        '200': { description: APPROVED }
+        '403': { description: MAKER_CHECKER_VIOLATION }
+        '422': { description: BILL_NOT_ELIGIBLE }
+  /api/v1/payment-batches/{id}/reject:
+    post:
+      tags: [ap]
+      summary: Reject with a reason (role ap_checker)
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses:
+        '200': { description: REJECTED }
+  /api/v1/payment-batches/{id}/submit:
+    post:
+      tags: [ap]
+      summary: Flag bills, build the payment file, archive it and send it to the bank SFTP
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - { $ref: '#/components/parameters/IdempotencyKey' }
+      responses:
+        '200': { description: SUBMITTED }
+        '409': { description: BATCH_MODIFIED_AFTER_APPROVAL or illegal state }
+  /api/v1/bank/inbound/poll:
+    post:
+      tags: [ap]
+      summary: Process files in the bank SFTP inbound folder (ACK, PAYMENT_STATUS, statements)
+      responses:
+        '200': { description: One result per file (PROCESSED, DUPLICATE, QUARANTINED, RETRY_LATER) }
 components:
   securitySchemes:
     bearerAuth: { type: http, scheme: bearer }

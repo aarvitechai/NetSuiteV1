@@ -92,6 +92,20 @@ export class MockNetSuiteAdapter implements NetSuitePort {
     this.bills.set(bill.externalId, { ...bill, internalId: this.id() });
   }
 
+  /** Simulates a user editing a bill in NetSuite (e.g. putting it on hold). */
+  patchBill(externalId: string, patch: Partial<VendorBill>): void {
+    const b = this.bills.get(externalId);
+    if (!b) throw new Error(`No bill ${externalId}`);
+    Object.assign(b, patch);
+  }
+
+  /** Simulates a user editing an invoice in NetSuite (e.g. marking it disputed). */
+  patchInvoice(externalId: string, patch: Partial<Invoice>): void {
+    const i = this.invoices.get(externalId);
+    if (!i) throw new Error(`No invoice ${externalId}`);
+    Object.assign(i, patch);
+  }
+
   addInvoice(inv: Invoice): void {
     this.invoices.set(inv.externalId, { ...inv, internalId: this.id() });
   }

@@ -1,0 +1,10 @@
+{
+  "type": "ACK",
+  "fileName": "NSD_PB20261120ABC123.ach",
+  "batchRef": "PB20261120ABC123",
+  "status": "ACCEPTED",
+  "entries": [
+    { "ref": "110000000000001", "status": "ACCEPTED" },
+    { "ref": "110000000000002", "status": "REJECTED", "reason": "R03 No account/unable to locate" }
+  ]
+}

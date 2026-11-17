@@ -1,0 +1,19 @@
+{
+  "type": "PAYMENT_STATUS",
+  "batchRef": "PB20261120ABC123",
+  "events": [
+    {
+      "ref": "110000000000001",
+      "status": "SETTLED",
+      "effectiveDate": "2026-11-23",
+      "bankRef": "BNK00000001"
+    },
+    {
+      "ref": "110000000000001",
+      "status": "RETURNED",
+      "returnCode": "R01",
+      "effectiveDate": "2026-11-25",
+      "bankRef": "BNK00000001"
+    }
+  ]
+}
