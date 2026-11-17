@@ -1,0 +1,14 @@
+<!-- NONE, REMINDER_1, REMINDER_2, ESCALATED. -->
+<transactionbodycustomfield scriptid="custbody_nsd_collection_stage">
+  <fieldtype>TEXT</fieldtype>
+  <label>Collection Stage</label>
+  <description>NONE, REMINDER_1, REMINDER_2, ESCALATED.</description>
+  <help>NONE, REMINDER_1, REMINDER_2, ESCALATED.</help>
+  <bodypurchase>F</bodypurchase>
+  <bodysale>T</bodysale>
+  <displaytype>INLINE</displaytype>
+  <ismandatory>F</ismandatory>
+  <storevalue>T</storevalue>
+  <isformula>F</isformula>
+  <checkspelling>F</checkspelling>
+</transactionbodycustomfield>

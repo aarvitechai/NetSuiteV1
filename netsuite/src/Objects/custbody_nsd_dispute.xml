@@ -1,0 +1,14 @@
+<!-- Invoice disputed by customer: collections reminders are paused. -->
+<transactionbodycustomfield scriptid="custbody_nsd_dispute">
+  <fieldtype>CHECKBOX</fieldtype>
+  <label>Disputed</label>
+  <description>Invoice disputed by customer: collections reminders are paused.</description>
+  <help>Invoice disputed by customer: collections reminders are paused.</help>
+  <bodypurchase>F</bodypurchase>
+  <bodysale>T</bodysale>
+  <displaytype>NORMAL</displaytype>
+  <ismandatory>F</ismandatory>
+  <storevalue>T</storevalue>
+  <isformula>F</isformula>
+  <checkspelling>F</checkspelling>
+</transactionbodycustomfield>

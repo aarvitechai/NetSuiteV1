@@ -1,0 +1,14 @@
+<!-- Reference returned by the bank or payment provider. -->
+<transactionbodycustomfield scriptid="custbody_nsd_provider_ref">
+  <fieldtype>TEXT</fieldtype>
+  <label>Provider / Bank Reference</label>
+  <description>Reference returned by the bank or payment provider.</description>
+  <help>Reference returned by the bank or payment provider.</help>
+  <bodypurchase>T</bodypurchase>
+  <bodysale>T</bodysale>
+  <displaytype>INLINE</displaytype>
+  <ismandatory>F</ismandatory>
+  <storevalue>T</storevalue>
+  <isformula>F</isformula>
+  <checkspelling>F</checkspelling>
+</transactionbodycustomfield>

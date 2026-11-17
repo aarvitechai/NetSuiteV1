@@ -21,3 +21,11 @@ Use it to describe the project honestly, for example in interviews.
 - Card numbers or CVV.
 - PCI DSS compliance claims.
 - Production accounting policy.
+
+## SDF objects (Phase 2)
+
+- The object XML in `netsuite/src/Objects/` was written by hand following SDF conventions. It has
+  **not** been validated against a real account.
+- Before deploying, run `suitecloud project:validate`. After the first deploy, re-import the objects
+  with `suitecloud object:import` to pick up account-specific attributes.
+- The saved-search status codes (`VendBill:A`, `CustInvc:A`) must be verified in the target account.

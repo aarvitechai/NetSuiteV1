@@ -1,0 +1,14 @@
+<!-- Set when the bill is in a submitted payment batch, so it cannot be proposed twice. -->
+<transactionbodycustomfield scriptid="custbody_nsd_pay_in_progress">
+  <fieldtype>CHECKBOX</fieldtype>
+  <label>Payment In Progress</label>
+  <description>Set when the bill is in a submitted payment batch, so it cannot be proposed twice.</description>
+  <help>Set when the bill is in a submitted payment batch, so it cannot be proposed twice.</help>
+  <bodypurchase>T</bodypurchase>
+  <bodysale>F</bodysale>
+  <displaytype>INLINE</displaytype>
+  <ismandatory>F</ismandatory>
+  <storevalue>T</storevalue>
+  <isformula>F</isformula>
+  <checkspelling>F</checkspelling>
+</transactionbodycustomfield>

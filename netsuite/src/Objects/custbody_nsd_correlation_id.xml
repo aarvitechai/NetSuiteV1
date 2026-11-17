@@ -1,0 +1,14 @@
+<!-- Trace ID of the integration flow that last touched this record. -->
+<transactionbodycustomfield scriptid="custbody_nsd_correlation_id">
+  <fieldtype>TEXT</fieldtype>
+  <label>Correlation ID</label>
+  <description>Trace ID of the integration flow that last touched this record.</description>
+  <help>Trace ID of the integration flow that last touched this record.</help>
+  <bodypurchase>T</bodypurchase>
+  <bodysale>T</bodysale>
+  <displaytype>INLINE</displaytype>
+  <ismandatory>F</ismandatory>
+  <storevalue>T</storevalue>
+  <isformula>F</isformula>
+  <checkspelling>F</checkspelling>
+</transactionbodycustomfield>

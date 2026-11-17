@@ -1,0 +1,13 @@
+<!-- Which system owns this vendor/customer master (e.g. MIDDLEWARE). -->
+<entitycustomfield scriptid="custentity_nsd_ext_id_src">
+  <fieldtype>TEXT</fieldtype>
+  <label>Integration Source System</label>
+  <description>Which system owns this vendor/customer master (e.g. MIDDLEWARE).</description>
+  <help>Which system owns this vendor/customer master (e.g. MIDDLEWARE).</help>
+  <appliestovendor>T</appliestovendor>
+  <appliestocustomer>T</appliestocustomer>
+  <displaytype>NORMAL</displaytype>
+  <ismandatory>F</ismandatory>
+  <storevalue>T</storevalue>
+  <isformula>F</isformula>
+</entitycustomfield>

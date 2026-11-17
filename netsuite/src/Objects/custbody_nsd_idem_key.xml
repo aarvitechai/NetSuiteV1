@@ -1,0 +1,14 @@
+<!-- Key used by the middleware to make create calls safe to retry. -->
+<transactionbodycustomfield scriptid="custbody_nsd_idem_key">
+  <fieldtype>TEXT</fieldtype>
+  <label>Idempotency Key</label>
+  <description>Key used by the middleware to make create calls safe to retry.</description>
+  <help>Key used by the middleware to make create calls safe to retry.</help>
+  <bodypurchase>T</bodypurchase>
+  <bodysale>T</bodysale>
+  <displaytype>INLINE</displaytype>
+  <ismandatory>F</ismandatory>
+  <storevalue>T</storevalue>
+  <isformula>F</isformula>
+  <checkspelling>F</checkspelling>
+</transactionbodycustomfield>

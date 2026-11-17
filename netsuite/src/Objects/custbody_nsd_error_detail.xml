@@ -1,0 +1,14 @@
+<!-- Last integration error (no secrets / payment data). -->
+<transactionbodycustomfield scriptid="custbody_nsd_error_detail">
+  <fieldtype>TEXTAREA</fieldtype>
+  <label>Integration Error Detail</label>
+  <description>Last integration error (no secrets / payment data).</description>
+  <help>Last integration error (no secrets / payment data).</help>
+  <bodypurchase>T</bodypurchase>
+  <bodysale>T</bodysale>
+  <displaytype>INLINE</displaytype>
+  <ismandatory>F</ismandatory>
+  <storevalue>T</storevalue>
+  <isformula>F</isformula>
+  <checkspelling>F</checkspelling>
+</transactionbodycustomfield>

@@ -1,0 +1,13 @@
+<!-- Tokenised reference to vendor bank details held by the provider. Never the raw account number. -->
+<entitycustomfield scriptid="custentity_nsd_bank_token">
+  <fieldtype>TEXT</fieldtype>
+  <label>Bank Account Token</label>
+  <description>Tokenised reference to vendor bank details held by the provider. Never the raw account number.</description>
+  <help>Tokenised reference to vendor bank details held by the provider. Never the raw account number.</help>
+  <appliestovendor>T</appliestovendor>
+  <appliestocustomer>F</appliestocustomer>
+  <displaytype>NORMAL</displaytype>
+  <ismandatory>F</ismandatory>
+  <storevalue>T</storevalue>
+  <isformula>F</isformula>
+</entitycustomfield>

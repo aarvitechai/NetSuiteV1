@@ -1,0 +1,81 @@
+<!-- Audit/error log of integration operations visible to NetSuite admins. -->
+<customrecordtype scriptid="customrecord_nsd_int_log">
+  <recordname>Northstar Integration Log</recordname>
+  <description>Audit/error log of integration operations visible to NetSuite admins.</description>
+  <accesstype>CUSTRECORDENTRYPERM</accesstype>
+  <allowattachments>F</allowattachments>
+  <allowinlinedeleting>F</allowinlinedeleting>
+  <allowinlineediting>F</allowinlineediting>
+  <allowquicksearch>T</allowquicksearch>
+  <enablemailmerge>F</enablemailmerge>
+  <includename>T</includename>
+  <isinactive>F</isinactive>
+  <isordered>F</isordered>
+  <showid>T</showid>
+  <customrecordcustomfields>
+    <customrecordcustomfield scriptid="custrecord_nsd_il_correlation_id">
+      <fieldtype>TEXT</fieldtype>
+      <label>Correlation ID</label>
+      <ismandatory>T</ismandatory>
+      <storevalue>T</storevalue>
+      <isformula>F</isformula>
+      <displaytype>NORMAL</displaytype>
+    </customrecordcustomfield>
+    <customrecordcustomfield scriptid="custrecord_nsd_il_operation">
+      <fieldtype>TEXT</fieldtype>
+      <label>Operation</label>
+      <ismandatory>T</ismandatory>
+      <storevalue>T</storevalue>
+      <isformula>F</isformula>
+      <displaytype>NORMAL</displaytype>
+    </customrecordcustomfield>
+    <customrecordcustomfield scriptid="custrecord_nsd_il_status">
+      <fieldtype>TEXT</fieldtype>
+      <label>Status</label>
+      <ismandatory>T</ismandatory>
+      <storevalue>T</storevalue>
+      <isformula>F</isformula>
+      <displaytype>NORMAL</displaytype>
+    </customrecordcustomfield>
+    <customrecordcustomfield scriptid="custrecord_nsd_il_error_code">
+      <fieldtype>TEXT</fieldtype>
+      <label>Error Code</label>
+      <ismandatory>F</ismandatory>
+      <storevalue>T</storevalue>
+      <isformula>F</isformula>
+      <displaytype>NORMAL</displaytype>
+    </customrecordcustomfield>
+    <customrecordcustomfield scriptid="custrecord_nsd_il_error_detail">
+      <fieldtype>CLOBTEXT</fieldtype>
+      <label>Error Detail</label>
+      <ismandatory>F</ismandatory>
+      <storevalue>T</storevalue>
+      <isformula>F</isformula>
+      <displaytype>NORMAL</displaytype>
+    </customrecordcustomfield>
+    <customrecordcustomfield scriptid="custrecord_nsd_il_record_type">
+      <fieldtype>TEXT</fieldtype>
+      <label>Related Record Type</label>
+      <ismandatory>F</ismandatory>
+      <storevalue>T</storevalue>
+      <isformula>F</isformula>
+      <displaytype>NORMAL</displaytype>
+    </customrecordcustomfield>
+    <customrecordcustomfield scriptid="custrecord_nsd_il_record_id">
+      <fieldtype>TEXT</fieldtype>
+      <label>Related Record Internal ID</label>
+      <ismandatory>F</ismandatory>
+      <storevalue>T</storevalue>
+      <isformula>F</isformula>
+      <displaytype>NORMAL</displaytype>
+    </customrecordcustomfield>
+    <customrecordcustomfield scriptid="custrecord_nsd_il_idem_key">
+      <fieldtype>TEXT</fieldtype>
+      <label>Idempotency Key</label>
+      <ismandatory>F</ismandatory>
+      <storevalue>T</storevalue>
+      <isformula>F</isformula>
+      <displaytype>NORMAL</displaytype>
+    </customrecordcustomfield>
+  </customrecordcustomfields>
+</customrecordtype>

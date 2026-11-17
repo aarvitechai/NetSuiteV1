@@ -1,0 +1,14 @@
+<!-- Last integration status, e.g. SYNCED, PENDING, ERROR. -->
+<transactionbodycustomfield scriptid="custbody_nsd_int_status">
+  <fieldtype>TEXT</fieldtype>
+  <label>Integration Status</label>
+  <description>Last integration status, e.g. SYNCED, PENDING, ERROR.</description>
+  <help>Last integration status, e.g. SYNCED, PENDING, ERROR.</help>
+  <bodypurchase>T</bodypurchase>
+  <bodysale>T</bodysale>
+  <displaytype>INLINE</displaytype>
+  <ismandatory>F</ismandatory>
+  <storevalue>T</storevalue>
+  <isformula>F</isformula>
+  <checkspelling>F</checkspelling>
+</transactionbodycustomfield>

@@ -1,0 +1,97 @@
+<!-- One AP payment batch (maker-checker approved, immutable once approved). -->
+<customrecordtype scriptid="customrecord_nsd_pay_batch">
+  <recordname>Northstar Payment Batch</recordname>
+  <description>One AP payment batch (maker-checker approved, immutable once approved).</description>
+  <accesstype>CUSTRECORDENTRYPERM</accesstype>
+  <allowattachments>F</allowattachments>
+  <allowinlinedeleting>F</allowinlinedeleting>
+  <allowinlineediting>F</allowinlineediting>
+  <allowquicksearch>T</allowquicksearch>
+  <enablemailmerge>F</enablemailmerge>
+  <includename>T</includename>
+  <isinactive>F</isinactive>
+  <isordered>F</isordered>
+  <showid>T</showid>
+  <customrecordcustomfields>
+    <customrecordcustomfield scriptid="custrecord_nsd_pb_batch_ref">
+      <fieldtype>TEXT</fieldtype>
+      <label>Batch Reference</label>
+      <ismandatory>T</ismandatory>
+      <storevalue>T</storevalue>
+      <isformula>F</isformula>
+      <displaytype>NORMAL</displaytype>
+    </customrecordcustomfield>
+    <customrecordcustomfield scriptid="custrecord_nsd_pb_rail">
+      <fieldtype>TEXT</fieldtype>
+      <label>Payment Rail</label>
+      <ismandatory>T</ismandatory>
+      <storevalue>T</storevalue>
+      <isformula>F</isformula>
+      <displaytype>NORMAL</displaytype>
+    </customrecordcustomfield>
+    <customrecordcustomfield scriptid="custrecord_nsd_pb_currency">
+      <fieldtype>TEXT</fieldtype>
+      <label>Currency</label>
+      <ismandatory>T</ismandatory>
+      <storevalue>T</storevalue>
+      <isformula>F</isformula>
+      <displaytype>NORMAL</displaytype>
+    </customrecordcustomfield>
+    <customrecordcustomfield scriptid="custrecord_nsd_pb_total">
+      <fieldtype>CURRENCY</fieldtype>
+      <label>Total Amount</label>
+      <ismandatory>T</ismandatory>
+      <storevalue>T</storevalue>
+      <isformula>F</isformula>
+      <displaytype>NORMAL</displaytype>
+    </customrecordcustomfield>
+    <customrecordcustomfield scriptid="custrecord_nsd_pb_count">
+      <fieldtype>INTEGER</fieldtype>
+      <label>Item Count</label>
+      <ismandatory>T</ismandatory>
+      <storevalue>T</storevalue>
+      <isformula>F</isformula>
+      <displaytype>NORMAL</displaytype>
+    </customrecordcustomfield>
+    <customrecordcustomfield scriptid="custrecord_nsd_pb_status">
+      <fieldtype>TEXT</fieldtype>
+      <label>Batch Status</label>
+      <ismandatory>T</ismandatory>
+      <storevalue>T</storevalue>
+      <isformula>F</isformula>
+      <displaytype>NORMAL</displaytype>
+    </customrecordcustomfield>
+    <customrecordcustomfield scriptid="custrecord_nsd_pb_maker">
+      <fieldtype>TEXT</fieldtype>
+      <label>Created By (Maker)</label>
+      <ismandatory>T</ismandatory>
+      <storevalue>T</storevalue>
+      <isformula>F</isformula>
+      <displaytype>NORMAL</displaytype>
+    </customrecordcustomfield>
+    <customrecordcustomfield scriptid="custrecord_nsd_pb_checker">
+      <fieldtype>TEXT</fieldtype>
+      <label>Approved By (Checker)</label>
+      <ismandatory>F</ismandatory>
+      <storevalue>T</storevalue>
+      <isformula>F</isformula>
+      <displaytype>NORMAL</displaytype>
+    </customrecordcustomfield>
+    <customrecordcustomfield scriptid="custrecord_nsd_pb_file_sha256">
+      <fieldtype>TEXT</fieldtype>
+      <label>File SHA-256 Checksum</label>
+      <ismandatory>F</ismandatory>
+      <storevalue>T</storevalue>
+      <isformula>F</isformula>
+      <displaytype>NORMAL</displaytype>
+    </customrecordcustomfield>
+    <customrecordcustomfield scriptid="custrecord_nsd_pb_bank_ref">
+      <fieldtype>TEXT</fieldtype>
+      <label>Bank Reference</label>
+      <ismandatory>F</ismandatory>
+      <storevalue>T</storevalue>
+      <isformula>F</isformula>
+      <displaytype>NORMAL</displaytype>
+    </customrecordcustomfield>
+  </customrecordcustomfields>
+</customrecordtype>

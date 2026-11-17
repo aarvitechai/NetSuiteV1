@@ -1,0 +1,14 @@
+<!-- AP hold flag: bill must not be paid. -->
+<transactionbodycustomfield scriptid="custbody_nsd_pay_hold">
+  <fieldtype>CHECKBOX</fieldtype>
+  <label>Payment Hold</label>
+  <description>AP hold flag: bill must not be paid.</description>
+  <help>AP hold flag: bill must not be paid.</help>
+  <bodypurchase>T</bodypurchase>
+  <bodysale>F</bodysale>
+  <displaytype>NORMAL</displaytype>
+  <ismandatory>F</ismandatory>
+  <storevalue>T</storevalue>
+  <isformula>F</isformula>
+  <checkspelling>F</checkspelling>
+</transactionbodycustomfield>

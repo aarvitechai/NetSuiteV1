@@ -1,0 +1,9 @@
+<!-- What SDF deploys: every file under FileCabinet and every object definition under Objects. -->
+<deploy>
+  <files>
+    <path>~/FileCabinet/*</path>
+  </files>
+  <objects>
+    <path>~/Objects/*</path>
+  </objects>
+</deploy>

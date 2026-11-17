@@ -1,0 +1,14 @@
+<!-- Immutable reference of the payment batch that paid this bill. -->
+<transactionbodycustomfield scriptid="custbody_nsd_pay_batch_ref">
+  <fieldtype>TEXT</fieldtype>
+  <label>Payment Batch Reference</label>
+  <description>Immutable reference of the payment batch that paid this bill.</description>
+  <help>Immutable reference of the payment batch that paid this bill.</help>
+  <bodypurchase>T</bodypurchase>
+  <bodysale>F</bodysale>
+  <displaytype>INLINE</displaytype>
+  <ismandatory>F</ismandatory>
+  <storevalue>T</storevalue>
+  <isformula>F</isformula>
+  <checkspelling>F</checkspelling>
+</transactionbodycustomfield>

@@ -1,0 +1,73 @@
+<!-- A suggested or approved match between a bank statement line and a NetSuite transaction. -->
+<customrecordtype scriptid="customrecord_nsd_recon_match">
+  <recordname>Northstar Reconciliation Match</recordname>
+  <description>A suggested or approved match between a bank statement line and a NetSuite transaction.</description>
+  <accesstype>CUSTRECORDENTRYPERM</accesstype>
+  <allowattachments>F</allowattachments>
+  <allowinlinedeleting>F</allowinlinedeleting>
+  <allowinlineediting>F</allowinlineediting>
+  <allowquicksearch>T</allowquicksearch>
+  <enablemailmerge>F</enablemailmerge>
+  <includename>T</includename>
+  <isinactive>F</isinactive>
+  <isordered>F</isordered>
+  <showid>T</showid>
+  <customrecordcustomfields>
+    <customrecordcustomfield scriptid="custrecord_nsd_rm_bank_line_ref">
+      <fieldtype>TEXT</fieldtype>
+      <label>Bank Line Reference</label>
+      <ismandatory>T</ismandatory>
+      <storevalue>T</storevalue>
+      <isformula>F</isformula>
+      <displaytype>NORMAL</displaytype>
+    </customrecordcustomfield>
+    <customrecordcustomfield scriptid="custrecord_nsd_rm_txn_ref">
+      <fieldtype>TEXT</fieldtype>
+      <label>NetSuite Transaction Reference</label>
+      <ismandatory>F</ismandatory>
+      <storevalue>T</storevalue>
+      <isformula>F</isformula>
+      <displaytype>NORMAL</displaytype>
+    </customrecordcustomfield>
+    <customrecordcustomfield scriptid="custrecord_nsd_rm_rule">
+      <fieldtype>TEXT</fieldtype>
+      <label>Match Rule</label>
+      <ismandatory>T</ismandatory>
+      <storevalue>T</storevalue>
+      <isformula>F</isformula>
+      <displaytype>NORMAL</displaytype>
+    </customrecordcustomfield>
+    <customrecordcustomfield scriptid="custrecord_nsd_rm_confidence">
+      <fieldtype>PERCENT</fieldtype>
+      <label>Confidence</label>
+      <ismandatory>T</ismandatory>
+      <storevalue>T</storevalue>
+      <isformula>F</isformula>
+      <displaytype>NORMAL</displaytype>
+    </customrecordcustomfield>
+    <customrecordcustomfield scriptid="custrecord_nsd_rm_status">
+      <fieldtype>TEXT</fieldtype>
+      <label>Status</label>
+      <ismandatory>T</ismandatory>
+      <storevalue>T</storevalue>
+      <isformula>F</isformula>
+      <displaytype>NORMAL</displaytype>
+    </customrecordcustomfield>
+    <customrecordcustomfield scriptid="custrecord_nsd_rm_reviewer">
+      <fieldtype>TEXT</fieldtype>
+      <label>Reviewer</label>
+      <ismandatory>F</ismandatory>
+      <storevalue>T</storevalue>
+      <isformula>F</isformula>
+      <displaytype>NORMAL</displaytype>
+    </customrecordcustomfield>
+    <customrecordcustomfield scriptid="custrecord_nsd_rm_amount">
+      <fieldtype>CURRENCY</fieldtype>
+      <label>Amount</label>
+      <ismandatory>T</ismandatory>
+      <storevalue>T</storevalue>
+      <isformula>F</isformula>
+      <displaytype>NORMAL</displaytype>
+    </customrecordcustomfield>
+  </customrecordcustomfields>
+</customrecordtype>

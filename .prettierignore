@@ -6,3 +6,4 @@ package-lock.json
 *.docx
 plan.md
 netsuite/src/Objects/**/*.xml
+*.md

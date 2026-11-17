@@ -1,0 +1,5 @@
+[
+  { "externalId": "CUST-ACME", "companyName": "Acme Retail Corp", "currency": "USD", "email": "ap@acme-retail.example" },
+  { "externalId": "CUST-GLOBEX", "companyName": "Globex Industrial", "currency": "USD", "email": "payables@globex.example" },
+  { "externalId": "CUST-INITECH", "companyName": "Initech Office Solutions", "currency": "USD", "email": "finance@initech.example" }
+]

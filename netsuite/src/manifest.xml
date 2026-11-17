@@ -1,0 +1,16 @@
+<!--
+  SDF manifest: declares the project type and which account features must be enabled.
+  WHY: deployment fails fast in an account that lacks a required feature, instead of half-deploying.
+  Verify feature IDs with `suitecloud project:validate` against your account.
+-->
+<manifest projecttype="ACCOUNTCUSTOMIZATION">
+  <projectname>northstar-ap-ar</projectname>
+  <frameworkversion>1.0</frameworkversion>
+  <dependencies>
+    <features>
+      <feature required="true">CUSTOMRECORDS</feature>
+      <feature required="true">SERVERSIDESCRIPTING</feature>
+      <feature required="true">CLIENTSIDESCRIPTING</feature>
+    </features>
+  </dependencies>
+</manifest>

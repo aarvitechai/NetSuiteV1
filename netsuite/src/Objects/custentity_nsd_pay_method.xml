@@ -1,0 +1,13 @@
+<!-- ACH, WIRE or VCARD (vendors only). -->
+<entitycustomfield scriptid="custentity_nsd_pay_method">
+  <fieldtype>TEXT</fieldtype>
+  <label>Preferred Payment Rail</label>
+  <description>ACH, WIRE or VCARD (vendors only).</description>
+  <help>ACH, WIRE or VCARD (vendors only).</help>
+  <appliestovendor>T</appliestovendor>
+  <appliestocustomer>F</appliestocustomer>
+  <displaytype>NORMAL</displaytype>
+  <ismandatory>F</ismandatory>
+  <storevalue>T</storevalue>
+  <isformula>F</isformula>
+</entitycustomfield>

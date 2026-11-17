@@ -56,3 +56,24 @@ One entry per phase: what was built, the key concepts, and answers to the plan's
 3. _What happens when a payment is returned after it was marked as submitted?_ If it never settled,
    it moves Submitted/Accepted → Failed and the bill is released. If it had settled, it moves
    Settled → Returned → Reversed: the Vendor Payment is voided, the bill reopens, and AP contacts the vendor.
+
+## Phase 2 — NetSuite data model and configuration
+
+**What I built**
+
+- SDF project (`netsuite/`) with 11 body fields, 3 entity fields and 3 custom records
+- `nsd_constants.js`, the single source of field IDs
+- saved search definitions in code (`nsd_searches.js`)
+- AMD test harness, plus a test that keeps the field IDs and SDF objects in sync
+- data dictionary
+- synthetic seed data (`test-data/netsuite/`)
+
+**Review questions**
+
+1. *Standard record or custom record?* Use a standard record when NetSuite already models the business
+   object and its GL impact (bill, payment). Use a custom record for data NetSuite has no concept of,
+   such as a payment batch or a reconciliation match. Never imitate a standard transaction with a
+   custom record.
+2. *Why are external IDs useful?* They let you upsert without looking up the internal ID, they make
+   retries duplicate-safe, and they let you trace a record back to the source system.
+3. *What belongs in NetSuite and what in the middleware?* See the table in `docs/netsuite/data-dictionary.md`.
