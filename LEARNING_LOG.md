@@ -35,3 +35,24 @@ One entry per phase: what was built, the key concepts, and answers to the plan's
    SuiteCommerce MyAccount, payment SuiteApps and bank feeds need licences. REST and SOAP web
    services, Token-Based Authentication, SuiteScript, SuiteFlow and SDF need an administrator to
    enable them under _Setup → Company → Enable Features_. See `docs/access-checklist.md`.
+
+## Phase 1 — Business process and accounting foundations
+
+**What I built**
+
+- BRD with P2P and O2C diagrams
+- payment state machine (`domain/payment-state.ts`) with its diagram
+- decimal-safe money type (`domain/money.ts`)
+- accounting event matrix
+- glossary
+- exception catalogue
+
+**Review questions**
+
+1. _When should a vendor bill affect the GL?_ When the bill is approved and posted (Dr expense,
+   Cr AP). The vendor _payment_ affects the GL only at settlement.
+2. _How is a payment different from a settlement?_ A payment is the instruction ("please pay").
+   Settlement is the money actually moving. An accepted payment can still fail.
+3. _What happens when a payment is returned after it was marked as submitted?_ If it never settled,
+   it moves Submitted/Accepted → Failed and the bill is released. If it had settled, it moves
+   Settled → Returned → Reversed: the Vendor Payment is voided, the bill reopens, and AP contacts the vendor.
