@@ -29,7 +29,7 @@ export const TOKENS = {
 
 export const WEBHOOK_SECRET = 'test-webhook-secret-0123456789abcdef';
 
-export const testConfig = () =>
+export const testConfig = (extra: Record<string, string> = {}) =>
   loadConfig({
     NODE_ENV: 'test',
     LOG_LEVEL: 'silent',
@@ -47,13 +47,14 @@ export const testConfig = () =>
       `${TOKENS.acme}:customer:CUST-ACME`,
       `${TOKENS.globex}:customer:CUST-GLOBEX`,
     ].join(','),
+    ...extra, // last, so a test can override any default above
   });
 
-export function makeTestContext(overrides: ContainerOverrides = {}) {
+export function makeTestContext(overrides: ContainerOverrides = {}, config: Record<string, string> = {}) {
   const clock = fixedClock('2026-11-20T09:00:00.000Z');
   const netsuite = new MockNetSuiteAdapter();
   const store = new MemoryStore();
-  const container = createContainer(testConfig(), {
+  const container = createContainer(testConfig(config), {
     logger: pino({ level: 'silent' }),
     clock,
     netsuite,

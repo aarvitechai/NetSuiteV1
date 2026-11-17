@@ -14,6 +14,7 @@
 import type { Logger } from 'pino';
 import type { ArPaymentService } from './ar-payments';
 import type { AuditService } from './audit';
+import type { Dispatcher } from './dispatcher';
 import type { JobRunner } from './jobs';
 import { WebhookEventSchema, type WebhookEvent } from './ports/payment-provider';
 import type { Store } from './ports/store';
@@ -49,10 +50,12 @@ export class WebhookService {
     private readonly store: Store,
     private readonly ar: ArPaymentService,
     private readonly jobs: JobRunner,
+    private readonly dispatcher: Dispatcher,
     private readonly audit: AuditService,
     private readonly clock: Clock,
     private readonly logger: Logger,
-    private readonly secret: string,
+    /** Accepted signing secrets: [current, previous?]. The previous one is valid only during a rotation. */
+    private readonly secrets: string[],
     private readonly provider: string,
   ) {
     jobs.register(TOPIC_PROCESS_WEBHOOK, (p) => this.process((p as { receiptId: string }).receiptId));
@@ -66,12 +69,10 @@ export class WebhookService {
     rawBody: string,
     signatureHeader: string | undefined,
   ): Promise<{ status: 'accepted' | 'duplicate'; eventId: string }> {
-    const v = verifySignature(
-      this.secret,
-      rawBody,
-      signatureHeader,
-      Math.floor(this.clock.now().getTime() / 1000),
-    );
+    // Try the current secret, then the previous one (only set during a rotation).
+    const nowSec = Math.floor(this.clock.now().getTime() / 1000);
+    const results = this.secrets.map((secret) => verifySignature(secret, rawBody, signatureHeader, nowSec));
+    const v = results.find((r) => r.ok) ?? results[0]!;
     if (!v.ok) {
       // Log without the body. Repeated failures may mean an attack or a rotated secret.
       this.logger.warn({ reason: v.reason }, 'webhook signature rejected');
@@ -103,7 +104,19 @@ export class WebhookService {
       event,
     };
     try {
-      await this.repo().insert(receipt);
+      // INBOX + OUTBOX in one transaction: the receipt (dedupe) and the "process it" message are saved
+      // together, so an accepted event can never be lost, even if we crash right after answering 202.
+      // The message runs under a correlation ID derived from the event, so it is traceable end to end.
+      await runWithContext({ correlationId: `wh-${event.id}`, actor: `webhook:${this.provider}` }, () =>
+        this.store.transaction(async (tx) => {
+          await tx.repo<WebhookReceipt>('webhook_receipts').insert(receipt);
+          await this.dispatcher.dispatch(
+            TOPIC_PROCESS_WEBHOOK,
+            { receiptId: event.id },
+            { sourceRef: event.id, tx },
+          );
+        }),
+      );
     } catch (e) {
       if (e instanceof DuplicateKeyError) {
         this.logger.info({ eventId: event.id }, 'duplicate webhook delivery ignored');
@@ -112,10 +125,8 @@ export class WebhookService {
       throw e;
     }
 
-    // Asynchronous processing, under a correlation ID derived from the event (traceable end to end).
-    const p = runWithContext({ correlationId: `wh-${event.id}`, actor: `webhook:${this.provider}` }, () =>
-      this.jobs.run(TOPIC_PROCESS_WEBHOOK, { receiptId: event.id }, { sourceRef: event.id }),
-    ).finally(() => this.inflight.delete(p));
+    // Process AFTER answering: the HTTP response does not wait for this promise.
+    const p: Promise<void> = this.dispatcher.flush().finally(() => this.inflight.delete(p));
     this.inflight.add(p);
     return { status: 'accepted', eventId: event.id };
   }

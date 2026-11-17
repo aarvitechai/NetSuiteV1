@@ -276,3 +276,29 @@ One entry per phase: what was built, the key concepts, and answers to the plan's
 2. *One-to-many and many-to-one?* Handled by the GROUP_REF and SPLIT_REF rules, or by a manual match.
    In every case the totals must be exactly equal.
 3. *Which unmatched items need human approval?* Everything below 0.95 confidence, and every exception.
+
+## Phase 11 — Reliability, security, audit and performance
+
+**What I built**
+
+- Transactional outbox, in inline or worker mode, with crash recovery. Inbox plus outbox for webhooks.
+- Per-IP rate limiting and security headers.
+- Prometheus `/metrics` and an ops dashboard.
+- Secret provider with a caching TTL for rotation. The webhook secret can be rotated (previous secret
+  still accepted).
+- Stronger log redaction, plus a test proving it.
+- Failure-injection tests.
+- STRIDE threat model, access-control matrix and PCI scope notes.
+- Load test and performance report. The load test found an O(N) bottleneck, and fixing it made
+  payments 64× faster.
+
+**Review questions**
+
+1. *What is the difference between retrying and replaying?* Retry is automatic and immediate, for
+   transient errors. Replay is deliberate and later, after the root cause is fixed, and reuses the
+   original payload and correlation ID.
+2. *How do idempotency keys and unique external references work together?* The key protects the
+   client-to-middleware boundary. The externalId protects the middleware-to-NetSuite boundary, which
+   is the final safety net for the general ledger.
+3. *What data must never appear in logs?* Card numbers, CVV, full bank account numbers, passwords,
+   API tokens, OAuth secrets, webhook signatures and secrets, and full request bodies.

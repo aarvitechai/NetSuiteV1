@@ -15,9 +15,11 @@ import { devRoutes } from './api/routes/dev';
 import { healthRoutes } from './api/routes/health';
 import { integrationRoutes } from './api/routes/integration';
 import { masterDataRoutes } from './api/routes/master-data';
+import { opsRoutes } from './api/routes/ops';
 import { portalRoutes } from './api/routes/portal';
 import { reconciliationRoutes } from './api/routes/reconciliation';
 import { webhookRoutes } from './api/routes/webhooks';
+import { rateLimit, securityHeaders } from './api/security';
 import { NotFoundError } from './shared/errors';
 
 const OPENAPI_PATH = resolve(__dirname, '../openapi.yaml');
@@ -29,7 +31,18 @@ export function createApp(c: Container): express.Express {
   app.set('trust proxy', 1); // behind one load balancer in the cloud
 
   app.use(requestContext());
-  app.use(requestLogger(c.logger));
+  app.use(requestLogger(c.logger, c.metrics));
+  app.use(securityHeaders(c.config.NODE_ENV === 'production'));
+  c.metrics.describe('http_requests_total', 'HTTP requests by method, route and status');
+  c.metrics.describe('http_request_duration_ms', 'HTTP request latency in milliseconds');
+
+  // Rate limit per client IP on everything except health checks (load balancers poll those constantly).
+  const limiter = rateLimit({
+    limit: c.config.RATE_LIMIT_PER_MINUTE,
+    windowMs: 60_000,
+    key: (req) => req.ip ?? 'unknown',
+  });
+  app.use(['/api', '/webhooks', '/portal', '/dev'], limiter);
 
   // Health checks are public: load balancers call them without credentials.
   app.use(healthRoutes(c));
@@ -53,6 +66,8 @@ export function createApp(c: Container): express.Express {
     express.static(PORTAL_DIR),
   );
   if (c.config.NODE_ENV !== 'production') app.use(devRoutes(c)); // simulated checkout: never in production
+
+  app.use(opsRoutes(c)); // /metrics and /api/v1/ops/dashboard (ops token required)
 
   app.get('/api/v1/openapi.yaml', (_req, res) => {
     res.type('application/yaml').send(readFileSync(OPENAPI_PATH, 'utf8'));

@@ -11,7 +11,7 @@ import { ApPaymentService } from './application/ap-payments';
 import { ArPaymentService } from './application/ar-payments';
 import { AuditService } from './application/audit';
 import { BankInboundService } from './application/bank-inbound';
-import { DirectDispatcher, type Dispatcher } from './application/dispatcher';
+import { OutboxDispatcher } from './application/dispatcher';
 import { CollectionsService, RecordingNotifier, type Notifier } from './application/collections';
 import { IdempotencyService } from './application/idempotency';
 import { JobRunner } from './application/jobs';
@@ -30,6 +30,7 @@ import { PgStore } from './infrastructure/db/pg-store';
 import { MemoryStore } from './infrastructure/memory/memory-store';
 import type { AppConfig } from './shared/config';
 import { createLogger } from './shared/logger';
+import { Metrics } from './shared/metrics';
 import { sleep as realSleep, systemClock, type Clock } from './shared/util';
 
 export interface Container {
@@ -44,7 +45,7 @@ export interface Container {
   masterData: MasterDataSyncService;
   files: FileTransport;
   vault: BankVault;
-  dispatcher: Dispatcher;
+  dispatcher: OutboxDispatcher;
   ap: ApPaymentService;
   bankInbound: BankInboundService;
   /** The simulator is exposed with its concrete type so the demo and tests can drive the "customer" side. */
@@ -54,6 +55,7 @@ export interface Container {
   collections: CollectionsService;
   notifier: Notifier;
   reconciliation: ReconciliationService;
+  metrics: Metrics;
 }
 
 export interface ContainerOverrides {
@@ -94,7 +96,7 @@ export function createContainer(config: AppConfig, overrides: ContainerOverrides
   const masterData = new MasterDataSyncService(netsuite, jobs, audit);
   const files = overrides.files ?? new LocalFolderSftp(config.SFTP_ROOT);
   const vault = overrides.vault ?? new SimulatedVault();
-  const dispatcher = new DirectDispatcher(jobs);
+  const dispatcher = new OutboxDispatcher(store, jobs, clock, logger, config.DISPATCH_MODE);
   const ap = new ApPaymentService({
     store,
     netsuite,
@@ -119,10 +121,13 @@ export function createContainer(config: AppConfig, overrides: ContainerOverrides
     store,
     ar,
     jobs,
+    dispatcher,
     audit,
     clock,
     logger,
-    config.WEBHOOK_SIGNING_SECRET,
+    [config.WEBHOOK_SIGNING_SECRET, config.WEBHOOK_SIGNING_SECRET_PREVIOUS].filter((x): x is string =>
+      Boolean(x),
+    ),
     provider.name,
   );
   const notifier = overrides.notifier ?? new RecordingNotifier();
@@ -153,5 +158,6 @@ export function createContainer(config: AppConfig, overrides: ContainerOverrides
     collections,
     notifier,
     reconciliation,
+    metrics: new Metrics(),
   };
 }

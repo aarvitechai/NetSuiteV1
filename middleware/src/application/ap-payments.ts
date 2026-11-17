@@ -587,14 +587,16 @@ export class ApPaymentService {
         },
         tx,
       );
+      // Rejected payments never moved money: release their bills so they can be paid in a later batch.
+      // Enqueued INSIDE the transaction (outbox): the release cannot be lost if we crash after commit.
+      if (released.length)
+        await this.d.dispatcher.dispatch(
+          TOPIC_FLAG_BILLS,
+          { billIds: released, inProgress: false, batchRef: '' },
+          { sourceRef: batch.batchRef, tx },
+        );
     });
-    // Rejected payments never moved money: release their bills so they can be paid in a later batch.
-    if (released.length)
-      await this.d.dispatcher.dispatch(
-        TOPIC_FLAG_BILLS,
-        { billIds: released, inProgress: false, batchRef: '' },
-        { sourceRef: batch.batchRef },
-      );
+    await this.d.dispatcher.flush();
     return { accepted, rejected };
   }
 
@@ -654,16 +656,21 @@ export class ApPaymentService {
         },
         tx,
       );
+      // Outbox: "Settled" and "post the Vendor Payment" are saved together, atomically.
+      for (const id of toPost)
+        await this.d.dispatcher.dispatch(
+          TOPIC_POST_VENDOR_PAYMENT,
+          { instructionId: id },
+          { sourceRef: id, tx },
+        );
+      for (const id of toReverse)
+        await this.d.dispatcher.dispatch(
+          TOPIC_REVERSE_VENDOR_PAYMENT,
+          { instructionId: id },
+          { sourceRef: id, tx },
+        );
     });
-
-    for (const id of toPost)
-      await this.d.dispatcher.dispatch(TOPIC_POST_VENDOR_PAYMENT, { instructionId: id }, { sourceRef: id });
-    for (const id of toReverse)
-      await this.d.dispatcher.dispatch(
-        TOPIC_REVERSE_VENDOR_PAYMENT,
-        { instructionId: id },
-        { sourceRef: id },
-      );
+    await this.d.dispatcher.flush();
     return { settled: toPost.length, returned: toReverse.length, ignored };
   }
 

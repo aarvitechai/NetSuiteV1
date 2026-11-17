@@ -262,6 +262,7 @@ export class ReconciliationService {
       source: 'reconciliation',
       details: { lines: lines.length, autoMatched, suggested, exceptions: exceptions.length },
     });
+    await this.dispatcher.flush(); // deliver the NetSuite reconciliation records
     return { autoMatched, suggested, exceptions: exceptions.length };
   }
 
@@ -348,6 +349,7 @@ export class ReconciliationService {
     await this.matches().upsert(updated);
     await this.setLineStatus(m.bankLineIds, 'MATCHED');
     await this.finalize(updated);
+    await this.dispatcher.flush();
     return updated;
   }
 
@@ -442,6 +444,7 @@ export class ReconciliationService {
     }
     await this.setLineStatus(input.bankLineIds, 'MATCHED');
     await this.finalize(match, new Map(chosen.map((c) => [c!.key, c!])));
+    await this.dispatcher.flush();
     return match;
   }
 

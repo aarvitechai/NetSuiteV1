@@ -12,25 +12,28 @@ import pino, { type Logger } from 'pino';
 import { currentContext } from './context';
 
 /** Field paths that must never appear in logs. The '*' wildcard matches one level of nesting. */
+/** Sensitive field names. Each is redacted at the top level AND one level deep ("*.name"). */
+const SENSITIVE_FIELDS = [
+  'password',
+  'secret',
+  'token',
+  'apiKey',
+  'authorization',
+  'cardNumber',
+  'cvv',
+  'accountNumber',
+  'consumerSecret',
+  'tokenSecret',
+  'signature',
+];
+
+/** Field paths that must never appear in logs. The '*' wildcard matches one level of nesting. */
 export const REDACT_PATHS = [
   'req.headers.authorization',
   'req.headers["x-signature"]',
   'headers.authorization',
-  '*.password',
-  '*.secret',
-  '*.token',
-  '*.apiKey',
-  '*.cardNumber',
-  '*.cvv',
-  '*.accountNumber',
-  '*.consumerSecret',
-  '*.tokenSecret',
-  'password',
-  'secret',
-  'token',
-  'cardNumber',
-  'cvv',
-  'accountNumber',
+  ...SENSITIVE_FIELDS,
+  ...SENSITIVE_FIELDS.map((f) => `*.${f}`),
 ];
 
 export function createLogger(level = 'info', destination?: pino.DestinationStream): Logger {

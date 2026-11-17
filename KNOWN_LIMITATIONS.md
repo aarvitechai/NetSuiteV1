@@ -93,3 +93,12 @@ Use it to describe the project honestly, for example in interviews.
   Real bank camt files may batch several transactions into one entry.
 - Statements come from the bank simulator or from the sample files. No bank API is integrated.
 - Bank fees and interest are not booked automatically. Finance books them in NetSuite.
+
+## Reliability and security (Phase 11)
+
+- The outbox `drain()` is safe within ONE process. With several workers on PostgreSQL, claiming must
+  use `FOR UPDATE SKIP LOCKED` (documented, not implemented).
+- The rate limiter is in-memory per instance.
+- Secrets come from environment variables. The cloud secret-manager integration is designed
+  (`SecretProvider`) but no AWS or Azure SDK is wired in.
+- The load test uses mock NetSuite. Real API latency and governance must be measured in a sandbox.

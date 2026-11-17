@@ -5,6 +5,7 @@
  * accepting new requests, let in-flight ones finish, then close the DB pool. Killing the process
  * abruptly could cut off a request halfway through a payment flow.
  */
+import { OutboxWorker } from './application/dispatcher';
 import { createApp } from './app';
 import { createContainer } from './container';
 import { loadConfig } from './shared/config';
@@ -25,6 +26,13 @@ function main(): void {
     });
   });
 
+  // Crash recovery: re-queue outbox messages a previous (crashed) process had claimed.
+  void container.dispatcher
+    .recoverStuck()
+    .then((n) => n && logger.warn({ recovered: n }, 'recovered stuck outbox messages'));
+  const worker = config.DISPATCH_MODE === 'worker' ? new OutboxWorker(container.dispatcher) : undefined;
+  worker?.start();
+
   const server = app.listen(config.PORT, () => {
     logger.info(
       { port: config.PORT, netsuite: container.netsuite.kind, storage: config.STORAGE_MODE },
@@ -37,6 +45,7 @@ function main(): void {
     if (stopping) return;
     stopping = true;
     logger.info({ signal }, 'shutting down');
+    worker?.stop();
     server.close(async () => {
       await container.webhooks.drain(); // finish processing webhooks already accepted
       await container.store.close();

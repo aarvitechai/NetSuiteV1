@@ -49,9 +49,14 @@ const ConfigSchema = z.object({
   NETSUITE_TOKEN_ID: z.string().optional(),
   NETSUITE_TOKEN_SECRET: z.string().optional(),
   STORAGE_MODE: z.enum(['memory', 'postgres']).default('memory'),
+  // inline: follow-up work runs right after each request. worker: a background outbox worker runs it.
+  DISPATCH_MODE: z.enum(['inline', 'worker']).default('inline'),
   DATABASE_URL: z.string().optional(),
   // min(16): a short webhook secret is easy to brute-force, so we refuse to start with one.
   WEBHOOK_SIGNING_SECRET: z.string().min(16, 'WEBHOOK_SIGNING_SECRET must be at least 16 characters'),
+  // During a secret ROTATION, the old secret stays valid for a while, so in-flight webhooks are not rejected.
+  WEBHOOK_SIGNING_SECRET_PREVIOUS: z.string().min(16).optional(),
+  RATE_LIMIT_PER_MINUTE: z.coerce.number().int().positive().default(600),
   API_TOKENS: z.string().min(1),
   SFTP_ROOT: z.string().default('./runtime-data/sftp'),
   COMPANY_NAME: z.string().max(16).default('NORTHSTAR DIST'),

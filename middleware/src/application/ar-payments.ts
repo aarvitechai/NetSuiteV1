@@ -275,16 +275,24 @@ export class ArPaymentService {
         break;
     }
 
-    await this.intents().upsert(intent);
-    await this.d.audit.record({
-      action: `PROVIDER_${e.type.toUpperCase().replace('.', '_')}`,
-      entityType: 'payment_intent',
-      entityId: intent.id,
-      outcome: 'SUCCESS',
-      source: 'webhook',
-      details: { eventId: e.id, status: intent.status },
+    // State change + audit + follow-up message: one atomic transaction (outbox pattern).
+    await this.d.store.transaction(async (tx) => {
+      await tx.repo<IntentRecord>('payment_intents').upsert(intent);
+      await this.d.audit.record(
+        {
+          action: `PROVIDER_${e.type.toUpperCase().replace('.', '_')}`,
+          entityType: 'payment_intent',
+          entityId: intent.id,
+          outcome: 'SUCCESS',
+          source: 'webhook',
+          details: { eventId: e.id, status: intent.status },
+        },
+        tx,
+      );
+      if (follow)
+        await this.d.dispatcher.dispatch(follow.topic, follow.payload, { sourceRef: intent.id, tx });
     });
-    if (follow) await this.d.dispatcher.dispatch(follow.topic, follow.payload, { sourceRef: intent.id });
+    await this.d.dispatcher.flush();
     return intent.status;
   }
 
@@ -321,22 +329,28 @@ export class ArPaymentService {
           ? `Settlement arithmetic mismatch (${lineErrors.join(', ') || 'totals'})`
           : undefined,
     };
-    await this.settlements().insert(settlement);
-    await this.d.audit.record({
-      action: 'SETTLEMENT_RECEIVED',
-      entityType: 'settlement',
-      entityId: settlement.id,
-      outcome: settlement.status === 'MISMATCH' ? 'FAILURE' : 'SUCCESS',
-      source: 'webhook',
-      details: { gross: d.gross, fees: d.fees, net: d.net, count: d.payments.length },
-    });
-    // A mismatch goes to finance as an exception. We never post numbers we do not trust.
-    if (settlement.status === 'RECEIVED')
-      await this.d.dispatcher.dispatch(
-        TOPIC_POST_DEPOSIT,
-        { settlementId: settlement.id },
-        { sourceRef: settlement.id },
+    await this.d.store.transaction(async (tx) => {
+      await tx.repo<Settlement>('settlements').insert(settlement);
+      await this.d.audit.record(
+        {
+          action: 'SETTLEMENT_RECEIVED',
+          entityType: 'settlement',
+          entityId: settlement.id,
+          outcome: settlement.status === 'MISMATCH' ? 'FAILURE' : 'SUCCESS',
+          source: 'webhook',
+          details: { gross: d.gross, fees: d.fees, net: d.net, count: d.payments.length },
+        },
+        tx,
       );
+      // A mismatch goes to finance as an exception. We never post numbers we do not trust.
+      if (settlement.status === 'RECEIVED')
+        await this.d.dispatcher.dispatch(
+          TOPIC_POST_DEPOSIT,
+          { settlementId: settlement.id },
+          { sourceRef: settlement.id, tx },
+        );
+    });
+    await this.d.dispatcher.flush();
     return settlement.status;
   }
 

@@ -10,6 +10,7 @@ import type { NextFunction, Request, RequestHandler, Response } from 'express';
 import type { Logger } from 'pino';
 import { z } from 'zod';
 import type { IdempotencyService } from '../application/idempotency';
+import type { Metrics } from '../shared/metrics';
 import type { ApiToken, Role } from '../shared/config';
 import { currentContext, isValidCorrelationId, newCorrelationId, runWithContext } from '../shared/context';
 import {
@@ -48,7 +49,7 @@ export function requestContext(): RequestHandler {
 }
 
 /** 2. One log line per request: method, path, status, duration. Never bodies (they may contain sensitive data). */
-export function requestLogger(logger: Logger): RequestHandler {
+export function requestLogger(logger: Logger, metrics?: Metrics): RequestHandler {
   return (req, res, next) => {
     const start = process.hrtime.bigint();
     res.on('finish', () => {
@@ -57,6 +58,11 @@ export function requestLogger(logger: Logger): RequestHandler {
         { method: req.method, path: req.path, status: res.statusCode, ms: Math.round(ms) },
         'http request',
       );
+      // Route PATTERN (e.g. /payment-batches/:id), not the raw path: raw IDs would create millions of series.
+      const pattern = (req.route as { path?: string } | undefined)?.path;
+      const route = pattern ? `${req.baseUrl}${pattern}` : 'unmatched';
+      metrics?.inc('http_requests_total', { method: req.method, route, status: String(res.statusCode) });
+      metrics?.observe('http_request_duration_ms', ms, { method: req.method, route });
     });
     next();
   };
@@ -137,14 +143,18 @@ export function idempotent(
 /** Last middleware: converts any error into a consistent JSON response. */
 export function errorHandler(logger: Logger) {
   return (err: unknown, req: Request, res: Response, _next: NextFunction) => {
-    // Body-parser errors (malformed JSON) come with a 400 status.
-    const parseError = (err as { type?: string; status?: number })?.type === 'entity.parse.failed';
+    // Body-parser errors carry an HTTP status: malformed JSON (400), body too large (413), and so on.
+    const parserErr = err as { type?: string; status?: number; expose?: boolean };
     const appErr =
       err instanceof AppError
         ? err
-        : parseError
+        : parserErr?.type === 'entity.parse.failed'
           ? new ValidationError('Malformed JSON body')
-          : new AppError('INTERNAL_ERROR', 'An unexpected error occurred', 500);
+          : parserErr?.type === 'entity.too.large'
+            ? new AppError('PAYLOAD_TOO_LARGE', 'Request body is too large', 413)
+            : parserErr?.expose && parserErr.status && parserErr.status < 500
+              ? new AppError('BAD_REQUEST', 'Request could not be processed', parserErr.status)
+              : new AppError('INTERNAL_ERROR', 'An unexpected error occurred', 500);
 
     if (appErr.httpStatus >= 500) logger.error({ err, code: appErr.code }, 'request failed');
     else logger.warn({ code: appErr.code, reason: appErr.message }, 'request rejected');

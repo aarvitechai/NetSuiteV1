@@ -7,6 +7,12 @@
  * Entities are deep-copied on the way in and out (structuredClone). WHY: without copying, a caller
  * could change an object after saving it and silently change the "stored" data. The PostgreSQL store
  * cannot behave that way, so the two would behave differently.
+ *
+ * TRANSACTIONS use an UNDO LOG: before a write inside a transaction changes a key, we remember that
+ * key's previous value. On failure the remembered values are restored in reverse order. The cost is
+ * proportional to what the transaction CHANGED.
+ * (An earlier version deep-copied the WHOLE store per transaction. The load test showed that grows
+ * with data volume, and limited AR payments to about 10/s. See docs/performance/report.md.)
  */
 import { DuplicateKeyError } from '../../shared/errors';
 import {
@@ -18,17 +24,29 @@ import {
 } from '../../application/ports/store';
 
 type Data = Map<CollectionName, Map<string, unknown>>;
+type UndoLog = (() => void)[];
 
 class MemoryRepository<T extends Entity> implements Repository<T> {
   constructor(
     private readonly data: Data,
     private readonly name: CollectionName,
+    /** Present only for repositories handed out INSIDE a transaction. */
+    private readonly undo?: UndoLog,
   ) {}
 
   private table(): Map<string, unknown> {
     let t = this.data.get(this.name);
     if (!t) this.data.set(this.name, (t = new Map()));
     return t;
+  }
+
+  /** Remembers how to restore `id` to its current state, if we are inside a transaction. */
+  private remember(id: string): void {
+    if (!this.undo) return;
+    const table = this.table();
+    const had = table.has(id);
+    const previous = table.get(id); // stored values are never mutated in place, so no copy is needed
+    this.undo.push(() => (had ? table.set(id, previous) : table.delete(id)));
   }
 
   async get(id: string): Promise<T | undefined> {
@@ -38,14 +56,17 @@ class MemoryRepository<T extends Entity> implements Repository<T> {
 
   async insert(entity: T): Promise<void> {
     if (this.table().has(entity.id)) throw new DuplicateKeyError(this.name, entity.id);
+    this.remember(entity.id);
     this.table().set(entity.id, structuredClone(entity));
   }
 
   async upsert(entity: T): Promise<void> {
+    this.remember(entity.id);
     this.table().set(entity.id, structuredClone(entity));
   }
 
   async delete(id: string): Promise<void> {
+    this.remember(id);
     this.table().delete(id);
   }
 
@@ -54,14 +75,15 @@ class MemoryRepository<T extends Entity> implements Repository<T> {
     options: { limit?: number } = {},
   ): Promise<T[]> {
     const allowed = COLLECTIONS[this.name] as readonly string[];
-    for (const key of Object.keys(filter)) {
+    const entries = Object.entries(filter);
+    for (const [key] of entries) {
       // Same rule as PostgreSQL: only indexed fields can be filtered.
       if (!allowed.includes(key)) throw new Error(`Field "${key}" is not filterable on ${this.name}`);
     }
     const out: T[] = [];
     for (const v of this.table().values()) {
       const e = v as Record<string, unknown>;
-      if (Object.entries(filter).every(([k, val]) => e[k] === val)) out.push(structuredClone(v) as T);
+      if (entries.every(([k, val]) => e[k] === val)) out.push(structuredClone(v) as T);
       if (options.limit && out.length >= options.limit) break;
     }
     return out;
@@ -70,7 +92,7 @@ class MemoryRepository<T extends Entity> implements Repository<T> {
 
 export class MemoryStore implements Store {
   private data: Data = new Map();
-  /** Serialises transactions so that two concurrent ones cannot overwrite each other's snapshot. */
+  /** Serialises transactions so that two concurrent ones cannot interleave their changes. */
   private txChain: Promise<unknown> = Promise.resolve();
 
   repo<T extends Entity>(collection: CollectionName): Repository<T> {
@@ -78,22 +100,21 @@ export class MemoryStore implements Store {
   }
 
   async transaction<R>(fn: (tx: Store) => Promise<R>): Promise<R> {
-    // Inside a transaction, a nested transaction() simply joins the outer one (like a DB savepoint-less
-    // nested call). Without this, the inner call would wait forever for the outer one to finish.
-    const txView: Store = {
-      repo: (c) => this.repo(c),
-      transaction: (inner) => inner(txView),
-      ping: () => this.ping(),
-      close: () => this.close(),
-    };
     const run = async () => {
-      // Snapshot everything; on failure restore it. This gives all-or-nothing behaviour, like a DB rollback.
-      const snapshot = structuredClone(this.data);
+      const undo: UndoLog = [];
+      // Inside a transaction, a nested transaction() simply joins the outer one (no savepoints).
+      // Without this, the inner call would wait forever for the outer one to finish.
+      const txView: Store = {
+        repo: <T extends Entity>(c: CollectionName) => new MemoryRepository<T>(this.data, c, undo),
+        transaction: (inner) => inner(txView),
+        ping: () => this.ping(),
+        close: () => this.close(),
+      };
       try {
         return await fn(txView);
       } catch (err) {
-        this.data.clear();
-        for (const [k, v] of snapshot) this.data.set(k, v);
+        // Roll back: undo every change made through this transaction, newest first.
+        for (let i = undo.length - 1; i >= 0; i--) undo[i]!();
         throw err;
       }
     };

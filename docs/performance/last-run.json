@@ -1,0 +1,91 @@
+{
+  "parameters": {
+    "vendors": 500,
+    "billsPerVendor": 10,
+    "bills": 5000,
+    "payments": 300
+  },
+  "stages": [
+    {
+      "stage": "AP proposal (eligibility rules)",
+      "items": 5000,
+      "ms": 92,
+      "perSecond": 54093,
+      "netsuiteCalls": 2
+    },
+    {
+      "stage": "AP create batch",
+      "items": 5000,
+      "ms": 84,
+      "perSecond": 59277,
+      "netsuiteCalls": 2
+    },
+    {
+      "stage": "AP approve (re-check + hash)",
+      "items": 5000,
+      "ms": 126,
+      "perSecond": 39755,
+      "netsuiteCalls": 2
+    },
+    {
+      "stage": "AP submit (flag bills + NACHA + SFTP)",
+      "items": 500,
+      "ms": 160,
+      "perSecond": 3134,
+      "netsuiteCalls": 2
+    },
+    {
+      "stage": "Bank ACK processing",
+      "items": 500,
+      "ms": 55,
+      "perSecond": 9021,
+      "netsuiteCalls": 0
+    },
+    {
+      "stage": "Settlement → NetSuite Vendor Payments (outbox)",
+      "items": 500,
+      "ms": 262,
+      "perSecond": 1907,
+      "netsuiteCalls": 500
+    },
+    {
+      "stage": "AR payments (intent + checkout + webhook + posting)",
+      "items": 300,
+      "ms": 466,
+      "perSecond": 644,
+      "netsuiteCalls": 600
+    },
+    {
+      "stage": "Reconciliation (statement import + matching)",
+      "items": 501,
+      "ms": 813,
+      "perSecond": 617,
+      "netsuiteCalls": 502
+    }
+  ],
+  "webhookLatencyMs": {
+    "p50": 0.9,
+    "p95": 1.6,
+    "p99": 2.1
+  },
+  "outboxAfterRun": {
+    "pending": 0,
+    "inProgress": 0,
+    "failed": 0,
+    "oldestPendingAgeSeconds": 0
+  },
+  "deadLetters": 0,
+  "vendorPaymentsPosted": 500,
+  "customerPaymentsPosted": 300,
+  "reconciliation": {
+    "format": "CSV",
+    "lines": 501,
+    "duplicates": 0,
+    "autoMatched": 501,
+    "suggested": 0,
+    "exceptions": 0
+  },
+  "totalNetSuiteCalls": 2411,
+  "heapUsedMb": 61,
+  "node": "v24.13.0"
+}
