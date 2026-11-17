@@ -1,0 +1,67 @@
+# Prometheus alerting rules for the Northstar middleware (scrapes GET /metrics with an ops token).
+# Each alert names its runbook. See docs/operations/slos-and-alerts.md.
+groups:
+  - name: northstar-middleware
+    rules:
+      - alert: ApiHighErrorRate
+        expr: |
+          sum(rate(http_requests_total{status=~"5.."}[10m]))
+            / sum(rate(http_requests_total[10m])) > 0.02
+        for: 10m
+        labels: { severity: sev2 }
+        annotations:
+          summary: 'More than 2% of API requests fail with 5xx'
+          runbook: 'docs/runbooks/integration-incidents.md#1-netsuite-outage-5xx-timeouts'
+
+      - alert: OutboxBacklog
+        expr: nsd_outbox_oldest_pending_age_seconds > 300
+        for: 5m
+        labels: { severity: sev2 }
+        annotations:
+          summary: 'Outbox messages waiting more than 5 minutes (postings delayed)'
+          runbook: 'docs/runbooks/integration-incidents.md#7-outbox-growing-or-not-draining'
+
+      - alert: DeadLettersOpen
+        expr: nsd_dead_letters_open > 0
+        for: 30m
+        labels: { severity: sev3 }
+        annotations:
+          summary: '{{ $value }} dead letters waiting for replay or discard'
+          runbook: 'docs/runbooks/integration-incidents.md#1-netsuite-outage-5xx-timeouts'
+
+      - alert: DeadLettersMany
+        expr: nsd_dead_letters_open > 20
+        for: 10m
+        labels: { severity: sev2 }
+        annotations:
+          summary: 'Large DLQ: likely an outage or a systematic data problem'
+          runbook: 'docs/runbooks/integration-incidents.md'
+
+      - alert: WebhooksFailing
+        expr: increase(nsd_webhooks_failed[15m]) > 0
+        labels: { severity: sev2 }
+        annotations:
+          summary: 'Payment provider webhooks failing to process'
+          runbook: 'docs/runbooks/integration-incidents.md#3-duplicate-webhooks'
+
+      - alert: BankFileQuarantined
+        expr: nsd_bank_files_quarantined > 0
+        labels: { severity: sev3 }
+        annotations:
+          summary: 'Inbound bank file(s) in quarantine'
+          runbook: 'docs/runbooks/integration-incidents.md#4-bank-file-failures'
+
+      - alert: SettlementMismatch
+        expr: nsd_settlements_mismatched > 0
+        labels: { severity: sev2 }
+        annotations:
+          summary: 'Provider settlement arithmetic does not add up; deposit not posted'
+          runbook: 'docs/runbooks/integration-incidents.md#5-reconciliation-exceptions'
+
+      - alert: ReconExceptionsAging
+        expr: nsd_recon_exceptions_open > 0
+        for: 3d
+        labels: { severity: sev3 }
+        annotations:
+          summary: 'Reconciliation exceptions open for more than 3 days'
+          runbook: 'docs/runbooks/integration-incidents.md#5-reconciliation-exceptions'

@@ -3,6 +3,16 @@
 This file is a plain statement of what is real, what is simulated, and what is a design only.
 Use it to describe the project honestly, for example in interviews.
 
+## Portfolio statement (summary)
+
+| Category | What |
+|---|---|
+| **Ran for real** | All middleware code, through 225 automated tests (green in GitHub Actions on Linux, Node 22 and 24). The PostgreSQL store, through its contract tests against real PostgreSQL 16 (Docker locally, and the CI service). The production Docker image, smoke-tested as a non-root container. The docker-compose stack with migrations. The load test. The narrated demo. |
+| **Ran against a real NetSuite sandbox** | **Nothing yet.** No sandbox credentials were available. |
+| **Simulated (clearly labelled)** | NetSuite (`MockNetSuiteAdapter`). The bank (`BankSimulator`, `LocalFolderSftp`, `SimulatedVault`). The payment provider (`SimulatedPaymentProvider`). Hosted checkout (`/dev/checkout`, disabled in production). Email (`RecordingNotifier`). |
+| **Written to documented APIs, but tested only with fakes** | `NetSuiteRestAdapter` (TBA, SuiteQL, record REST) and all six SuiteScripts (fake `N/*` modules) |
+| **Design or prototype only** | SuiteFlow workflows (specs). The SCMA extension (design; the portal is a local prototype). SOAP (envelope reference only). The cloud deployment (the workflow and task definition exist; deployment is disabled). |
+
 ## Ran against a real NetSuite sandbox
 
 - Nothing yet. No sandbox credentials were available while this was built.
@@ -11,10 +21,15 @@ Use it to describe the project honestly, for example in interviews.
 ## Simulated (runs locally, clearly labelled)
 
 - **NetSuite.** `MockNetSuiteAdapter` keeps records in memory.
+- **Bank.** `BankSimulator`, plus `LocalFolderSftp` standing in for SFTP and `SimulatedVault`
+  standing in for the bank details vault.
+- **Payment provider.** `SimulatedPaymentProvider`, with its hosted checkout at `/dev/checkout`.
 
 ## Design or prototype only
 
-- None yet.
+- SuiteFlow workflows (`docs/netsuite/workflows.md`).
+- The SCMA extension (`portal/scma-extension/README.md`).
+- Cloud deployment (`.github/workflows/deploy.yml` is gated by `DEPLOY_ENABLED`).
 
 ## Not in scope
 

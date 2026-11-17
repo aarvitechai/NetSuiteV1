@@ -8,18 +8,30 @@ This file guides Claude Code when working in this repository.
 
 The source of scope is `NetSuite_AP_AR_Banking_Payments_Learning_Plan.docx`, which describes 15 phases (0–14, about 34 weeks). When a `plan.md` exists, it takes over as the working copy of that plan.
 
-**Current state:** pre-Phase 0. The repo holds only the plan document. No code, build or test commands exist yet. Update this file as each one is added.
+**Current state:** every phase (0–14) is implemented, tested and merged into all branches. NetSuite, the bank and the payment provider are **simulated**. `KNOWN_LIMITATIONS.md` states exactly what is real, simulated or design-only. Keep that file truthful.
 
-## How to work with the user (mentor mode)
+## Commands
 
-You act as a senior NetSuite solution architect and integration mentor. The user is learning, so:
+```bash
+npm install
+npm test                    # all tests (Vitest); a fixed clock (2026-11-20) and in-memory fakes, no network
+npx vitest run <file>       # one test file; add -t "<name>" for one test
+npm run ci                  # lint + prettier check + typecheck + secret scan + tests (the gate before any commit)
+npm run dev                 # middleware on :3000 (PORT=... to change), portal at /portal/
+npm run demo                # narrated end-to-end walkthrough
+npm run loadtest            # volume test, writes docs/performance/last-run.json
+npm run build && npm start  # production build (tsc + scripts/copy-assets.mjs)
+TEST_DATABASE_URL=postgres://... npm test   # also runs the Store contract tests against PostgreSQL (drops schema public!)
+```
 
-1. **Work one phase at a time.** Never build several phases, or the whole platform, at once.
-2. **Before coding a phase:** explain in beginner-friendly language the business goal, the concepts to learn, the architecture, the NetSuite objects and APIs involved, and the security points. Inspect the repo and report what already exists.
-3. **Propose before changing anything:** the task breakdown, the files to create or change, the data model, the API contracts, test cases, security controls and acceptance criteria. **Wait for approval** before making changes.
-4. **After implementing:** explain every important file and function, run the tests and show the results, update the docs, and list everything that needs a real NetSuite sandbox or a licensed feature. Wait for approval before starting the next phase.
-5. Ask for a design review before any large code change.
-6. Keep `DECISIONS.md`, `LEARNING_LOG.md` and `KNOWN_LIMITATIONS.md` up to date.
+## How to work with the user
+
+The user is new to NetSuite and to programming, and learns from this code.
+
+- **Comments explain WHY**, in beginner-friendly language, in every file. Keep this style for new code.
+- **Delivery flow:** for each completed change, run `npm run ci`. Commit on `dev` and push. Then fast-forward `staging` → `production` → `main`, pushing each one, and finish back on `dev`. Never commit directly to the other branches.
+- The user asked for autonomous delivery: complete the work, then report. Still explain what was built, and what needs a real NetSuite sandbox.
+- Keep `DECISIONS.md`, `LEARNING_LOG.md`, `KNOWN_LIMITATIONS.md` and `docs/testing/defect-log.md` up to date.
 
 ## Hard rules
 
@@ -57,28 +69,43 @@ You act as a senior NetSuite solution architect and integration mentor. The user
 - **Persistence:** PostgreSQL holds integration jobs, idempotency keys, webhook receipts, audit events and provider references.
 - Each layer should cover config validation, centralized error handling, and health and readiness endpoints.
 
-## Planned repository layout
+## Repository layout and how the code fits together
 
 ```
-docs/{architecture,business-processes,accounting-mappings,api-contracts,runbooks,decisions}/
-netsuite/                       # SDF project
-  src/FileCabinet/SuiteScripts/{user-events,client,scheduled,map-reduce,suitelets,restlets}/
-  Objects/
-  manifest.xml
-middleware/src/{api,application,domain,infrastructure,adapters/{netsuite,payment-provider,bank},shared}/
-middleware/tests/
-portal/{scma-extension,local-prototype}/
-simulators/{payment-provider,bank,sftp-fixtures}/
-test-data/
-infrastructure/
-.github/workflows/
+middleware/src/
+  domain/          pure rules (money, payment-state, eligibility, payment-batch, ar, reconciliation). No I/O.
+  application/     use cases + ports/ (store, netsuite, payment-provider interfaces)
+  adapters/        netsuite/ (mock, rest, soap ref, suiteql, oauth1), bank/ (nacha, payment-files, vault,
+                   statement-parsers), payment-provider/ (simulator, webhook signatures), source/ (mapping)
+  infrastructure/  memory/ + db/ (Store impls, migrations), files/ (LocalFolderSftp), secrets/
+  api/             http.ts (context, auth, roles, validation, idempotency, errors), security.ts, routes/
+  container.ts     composition root: the ONLY place that wires concrete implementations
+middleware/tests/  unit/, contract/, api/, reliability/, e2e/, plus helpers.ts (makeTestContext)
+netsuite/          SDF project (src/FileCabinet/SuiteScripts/northstar/*, src/Objects/*.xml), suiteql/, tests/ (AMD harness)
+simulators/bank/   bank simulator    portal/   local-prototype + scma-extension design
+docs/              see docs/architecture/overview.md for the full map; LEARNING_PATH.md is the reading order
 ```
+
+**Patterns to follow when changing code:**
+
+- **Follow-up work goes through the outbox.** Inside the business transaction, call `dispatcher.dispatch(topic, payload, { tx })`. After commit, call `await dispatcher.flush()`.
+- **Every topic needs a handler.** Register it with `jobs.register(topic, handler)` in the service constructor. Handlers must be idempotent: NetSuite creates are keyed by `externalId`.
+- **New services are wired only in `container.ts`.** New routes are mounted in `app.ts`.
+- **New collections need two updates.** Add the collection and its filterable fields to `COLLECTIONS` in `application/ports/store.ts`, **and** add a table and indexes in a new migration file. A test checks that they agree.
+- **Field IDs live in one place on each side.** SuiteScript field IDs come only from `lib/nsd_constants.js`, and each has an SDF XML object (enforced by tests). The collection-stage rule exists in both `domain/ar.ts` and `nsd_rules.js`, and a parity test enforces that they match.
+- **Tests use the shared setup.** Use `makeTestContext()` (fixed clock, mock NetSuite, temp SFTP folder, no retry sleep). Pass config overrides as the second argument.
+
+**Gotchas:**
+
+- Prettier sometimes needs two `--write` passes before `format:check` passes.
+- `package-lock.json` must be regenerated on Linux (for example in a `node:22-alpine` container) when dependencies change. A Windows-generated lockfile drops Linux optional dependencies, and `npm ci` then fails in CI and Docker.
+- On this machine, ports 3000 and 5432 may already be used by other projects. Use `PORT`, `MW_PORT` and `DB_PORT`.
 
 ## Core entities
 
 `IntegrationJob`, `IdempotencyRecord`, `PaymentBatch`, `PaymentInstruction`, `WebhookReceipt`, `Settlement` (gross, fees and net amounts), `ReconciliationMatch` (match rule, confidence, reviewer) and `AuditEvent`.
 
-## Phase roadmap
+## Phase roadmap (all completed)
 
 | Phase | Focus                                                                                                                  |
 | ----- | ---------------------------------------------------------------------------------------------------------------------- |

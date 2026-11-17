@@ -358,3 +358,39 @@ One entry per phase: what was built, the key concepts, and answers to the plan's
 3. *What is the rollback strategy for a database or accounting-mapping change?* Expand/contract
    migrations, so rolling back the code is always safe. Postings already made with a wrong mapping are
    corrected by finance with journals, using the control totals and audit trail to scope them.
+
+## Phase 14 — Operations, documentation and senior-level readiness
+
+**What I built**
+
+- Incident runbooks for:
+  - NetSuite outage
+  - expired token
+  - duplicate webhooks
+  - bank file failures
+  - reconciliation exceptions
+  - a payment marked settled but missing from the bank
+  - outbox backlog
+
+  Each runbook includes an escalation table.
+- SLIs and SLOs, dashboard panels, Prometheus alert rules, and a postmortem template.
+- Architecture overview with a documentation map.
+- Learning path through the code, with exercises.
+- Narrated demo script (`npm run demo`) and a talk track.
+- Skills evidence matrix and interview stories.
+- Final README and CLAUDE.md.
+
+**Review questions**
+
+1. *How would you explain the design to a finance stakeholder?* Every day we compare what we intended
+   to pay, what NetSuite posted, what the bank shows and what the provider reports, to the cent. See
+   `docs/portfolio/interview-prep.md` §7.
+2. *How would you investigate a payment marked settled but missing from the bank?* See
+   `docs/runbooks/integration-incidents.md` §6.
+3. *What would you change before scaling to multiple subsidiaries or ERPs?* See
+   `docs/portfolio/interview-prep.md` §8. In short:
+   - entities and files that know their subsidiary;
+   - a canonical model behind the NetSuite port;
+   - outbox claiming that works with several workers;
+   - bulk flagging in NetSuite;
+   - OIDC for authentication.
