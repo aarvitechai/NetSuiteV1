@@ -39,3 +39,9 @@ Use it to describe the project honestly, for example in interviews.
   - `getFields()` on XEDIT
   - formula column naming (`formulanumeric`) in Map/Reduce values
   - deployment XML attributes
+
+## SuiteFlow and SuiteQL (Phase 4)
+
+- The workflows are **specifications only**. They must be built in the UI and then imported into SDF.
+- The SuiteQL field names (`foreignamountremaining`, `approvalstatus = 2`, …) follow the NetSuite
+  Records Catalog. They have not been executed against an account.

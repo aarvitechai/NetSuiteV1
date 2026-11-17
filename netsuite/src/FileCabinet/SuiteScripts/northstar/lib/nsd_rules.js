@@ -87,7 +87,22 @@ define(['./nsd_constants'], (C) => {
     ); // fits a long text field with room to spare
   }
 
+  /**
+   * AP approval routing used by the SuiteFlow bill-approval workflow (docs/netsuite/workflows.md).
+   * WHY in code as well: the workflow conditions are configured in the UI. Keeping the same thresholds
+   * here gives us a tested, reviewable reference, and lets the RESTlet or the middleware explain which
+   * approver a bill is waiting for.
+   * @param {number} amount bill total in base currency
+   * @returns {'AP_SUPERVISOR'|'CONTROLLER'|'CFO'}
+   */
+  function approvalRoute(amount) {
+    if (amount < 1000) return 'AP_SUPERVISOR';
+    if (amount <= 10000) return 'CONTROLLER';
+    return 'CFO';
+  }
+
   return {
+    approvalRoute,
     daysBetween,
     validateVendorBill,
     changedLockedFields,

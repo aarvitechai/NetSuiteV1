@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { loadSuiteScript } from './harness/amd-loader';
 
 type Rules = {
+  approvalRoute(amount: number): string;
   daysBetween(a: Date, b: Date): number;
   validateVendorBill(b: Record<string, unknown>): string[];
   changedLockedFields(o: Record<string, unknown>, n: Record<string, unknown>): string[];
@@ -48,6 +49,15 @@ describe('nsd_rules', () => {
     [90, true, 'NONE'],
   ])('collection stage for %i days overdue (disputed=%s) is %s', (days, disputed, stage) => {
     expect(rules.collectionStage(days, disputed)).toBe(stage);
+  });
+
+  it.each([
+    [999.99, 'AP_SUPERVISOR'],
+    [1000, 'CONTROLLER'],
+    [10000, 'CONTROLLER'],
+    [10000.01, 'CFO'],
+  ])('routes a %d bill to %s', (amount, route) => {
+    expect(rules.approvalRoute(amount)).toBe(route);
   });
 
   it('counts days across a DST change correctly', () => {

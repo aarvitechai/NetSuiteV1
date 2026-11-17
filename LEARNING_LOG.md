@@ -95,3 +95,22 @@ One entry per phase: what was built, the key concepts, and answers to the plan's
 2. *What happens when a script exceeds governance?* `SSS_USAGE_LIMIT_EXCEEDED`: the script stops
    and earlier saves are kept. Design for it by rescheduling or by using Map/Reduce.
 3. *Why must Map/Reduce be restart-safe?* An invocation can be re-run, so the work must be idempotent.
+
+## Phase 4 — SuiteFlow, saved searches and SuiteQL
+
+**What I built**
+
+- AP approval and AR collections workflow specs (`docs/netsuite/workflows.md`)
+- approval thresholds in code (`approvalRoute`)
+- 5 SuiteQL queries
+- injection-safe `bindSuiteQL`
+- convention tests for the SQL files
+
+**Review questions**
+
+1. *When is SuiteFlow preferable to SuiteScript?* For state- and approval-driven processes that use
+   standard actions and that business users should be able to see. See the table in the workflow doc.
+2. *What query patterns become expensive?* Unfiltered transaction scans, line-level rows, formulas
+   over many rows, and searches inside loops.
+3. *How do you avoid an over-permissive RESTlet?* Allow-lists, input validation, a restricted
+   audience, and no generic query passthrough.
