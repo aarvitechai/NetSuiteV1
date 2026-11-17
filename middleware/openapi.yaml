@@ -14,6 +14,7 @@ tags:
   - name: health
   - name: master-data
   - name: audit
+  - name: integration
 paths:
   /health:
     get:
@@ -104,6 +105,93 @@ paths:
         - { name: correlationId, in: query, schema: { type: string } }
       responses:
         '200': { description: OK }
+  /api/v1/sync/vendors:
+    post:
+      tags: [integration]
+      summary: Upsert vendors from the upstream system into NetSuite (role ops)
+      parameters: [{ $ref: '#/components/parameters/IdempotencyKey' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [records]
+              properties:
+                records:
+                  type: array
+                  maxItems: 500
+                  items:
+                    type: object
+                    required: [vendor_code, legal_name, ccy, status, pay_method, bank_ref]
+                    properties:
+                      vendor_code: { type: string }
+                      legal_name: { type: string }
+                      ccy: { type: string }
+                      status: { type: string, enum: [ACTIVE, INACTIVE] }
+                      pay_method: { type: string, enum: [ACH, WIRE, VCARD] }
+                      bank_ref:
+                        { type: string, description: 'Vault token (tok_...), never a raw account number' }
+                      routing_number: { type: string }
+      responses:
+        '200':
+          {
+            description: Sync report,
+            content: { application/json: { schema: { $ref: '#/components/schemas/SyncReport' } } },
+          }
+  /api/v1/sync/customers:
+    post:
+      tags: [integration]
+      summary: Upsert customers into NetSuite (role ops)
+      parameters: [{ $ref: '#/components/parameters/IdempotencyKey' }]
+      responses:
+        '200':
+          {
+            description: Sync report,
+            content: { application/json: { schema: { $ref: '#/components/schemas/SyncReport' } } },
+          }
+  /api/v1/jobs/{id}:
+    get:
+      tags: [integration]
+      summary: Integration job details (status, attempts, error, correlation ID)
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses:
+        '200': { description: OK }
+  /api/v1/dead-letters:
+    get:
+      tags: [integration]
+      summary: List dead letters
+      parameters: [{ name: status, in: query, schema: { type: string, enum: [OPEN, REPLAYED, DISCARDED] } }]
+      responses:
+        '200': { description: OK }
+  /api/v1/dead-letters/{id}/replay:
+    post:
+      tags: [integration]
+      summary: Re-run a dead letter with its original payload and correlation ID
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses:
+        '200': { description: Replay result (job status SUCCEEDED or FAILED) }
+        '409': { $ref: '#/components/responses/Error' }
+  /api/v1/dead-letters/{id}/discard:
+    post:
+      tags: [integration]
+      summary: Close a dead letter without re-running it (reason required)
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      requestBody:
+        content:
+          {
+            application/json:
+              {
+                schema:
+                  {
+                    type: object,
+                    required: [reason],
+                    properties: { reason: { type: string, minLength: 5 } },
+                  },
+              },
+          }
+      responses:
+        '200': { description: OK }
 components:
   securitySchemes:
     bearerAuth: { type: http, scheme: bearer }
@@ -125,6 +213,24 @@ components:
         application/json:
           schema: { $ref: '#/components/schemas/Error' }
   schemas:
+    SyncReport:
+      type: object
+      properties:
+        received: { type: integer }
+        created: { type: integer }
+        updated: { type: integer }
+        failed: { type: integer }
+        invalid: { type: integer }
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              sourceRef: { type: string }
+              outcome: { type: string, enum: [CREATED, UPDATED, FAILED, INVALID] }
+              internalId: { type: string }
+              jobId: { type: string }
+              error: { type: string }
     Money:
       type: object
       required: [amount, currency]

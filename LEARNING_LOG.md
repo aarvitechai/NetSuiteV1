@@ -145,3 +145,29 @@ One entry per phase: what was built, the key concepts, and answers to the plan's
    expiry, and on a 401 refreshes once and retries once.
 3. *400 versus 429 versus 5xx?* 400 is a permanent business error: don't retry, send to a human.
    429 and 5xx are transient: retry with backoff and honour Retry-After.
+
+## Phase 6 — NetSuite ↔ middleware integration
+
+**What I built**
+
+- bounded retries with exponential backoff, full jitter and Retry-After support
+- integration jobs
+- dead-letter queue with replay and discard
+- upstream → domain mapping with Zod, plus contract tests
+- vendor and customer sync with bounded concurrency and per-record isolation
+- a failure → DLQ → replay demo, traced under one correlation ID
+- field mapping spec
+
+**Review questions**
+
+1. *How do you prevent duplicate records during a retry?* Upsert or create keyed on `externalId`, and
+   look the record up before creating it. The idempotency key at the API level replays the stored
+   response.
+2. *What should happen when NetSuite is temporarily unavailable?* First, bounded retries with
+   backoff and jitter. Then the dead-letter queue, which keeps the original payload and correlation ID.
+   After recovery, operations replays the work. Handlers are idempotent, so the replay is safe. Healthy
+   records in the same batch are not blocked.
+3. *Which integration approach is best for each operation?* See the table in
+   `docs/architecture/netsuite-integration.md`. In short: REST upsert (`eid:`) for master data, SuiteQL
+   for reads, REST POST with `externalId` for transactions, and a RESTlet only where a narrow permission
+   scope is needed.

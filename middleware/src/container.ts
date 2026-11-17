@@ -3,21 +3,24 @@
  *
  * WHY: services receive their dependencies (store, NetSuite port, clock…) through their constructor
  * instead of creating them. This is "dependency injection". It means:
- *   - tests can swap in fakes (memory store, mock NetSuite, fixed clock);
+ *   - tests can swap in fakes (memory store, mock NetSuite, fixed clock, instant sleep);
  *   - configuration (STORAGE_MODE, NETSUITE_MODE) is interpreted here only, not in business code.
  */
 import type { Logger } from 'pino';
 import { AuditService } from './application/audit';
 import { IdempotencyService } from './application/idempotency';
+import { JobRunner } from './application/jobs';
+import { MasterDataSyncService } from './application/master-data-sync';
 import type { NetSuitePort } from './application/ports/netsuite';
 import type { Store } from './application/ports/store';
+import { DEFAULT_RETRY, type RetryPolicy } from './application/retry';
 import { MockNetSuiteAdapter } from './adapters/netsuite/mock-netsuite';
 import { NetSuiteRestAdapter } from './adapters/netsuite/rest-netsuite';
 import { PgStore } from './infrastructure/db/pg-store';
 import { MemoryStore } from './infrastructure/memory/memory-store';
 import type { AppConfig } from './shared/config';
 import { createLogger } from './shared/logger';
-import { systemClock, type Clock } from './shared/util';
+import { sleep as realSleep, systemClock, type Clock } from './shared/util';
 
 export interface Container {
   config: AppConfig;
@@ -27,6 +30,8 @@ export interface Container {
   netsuite: NetSuitePort;
   idempotency: IdempotencyService;
   audit: AuditService;
+  jobs: JobRunner;
+  masterData: MasterDataSyncService;
 }
 
 export interface ContainerOverrides {
@@ -34,6 +39,9 @@ export interface ContainerOverrides {
   clock?: Clock;
   store?: Store;
   netsuite?: NetSuitePort;
+  /** Tests pass `async () => {}` so retries do not actually wait. */
+  sleep?: (ms: number) => Promise<void>;
+  retryPolicy?: RetryPolicy;
 }
 
 function buildNetSuite(config: AppConfig): NetSuitePort {
@@ -54,6 +62,11 @@ export function createContainer(config: AppConfig, overrides: ContainerOverrides
     overrides.store ??
     (config.STORAGE_MODE === 'postgres' ? PgStore.fromUrl(config.DATABASE_URL!) : new MemoryStore());
   const netsuite = overrides.netsuite ?? buildNetSuite(config);
+  const sleep = overrides.sleep ?? realSleep;
+
+  const audit = new AuditService(store, clock);
+  const jobs = new JobRunner(store, audit, clock, logger, overrides.retryPolicy ?? DEFAULT_RETRY, { sleep });
+  const masterData = new MasterDataSyncService(netsuite, jobs, audit);
 
   return {
     config,
@@ -62,6 +75,8 @@ export function createContainer(config: AppConfig, overrides: ContainerOverrides
     store,
     netsuite,
     idempotency: new IdempotencyService(store, clock),
-    audit: new AuditService(store, clock),
+    audit,
+    jobs,
+    masterData,
   };
 }

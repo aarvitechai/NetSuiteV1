@@ -33,6 +33,7 @@ interface Fault {
   operation: string | '*';
   kind: FaultKind;
   remaining: number;
+  key?: string;
 }
 
 interface StoredTxn extends NsTransactionSummary {
@@ -79,9 +80,12 @@ export class MockNetSuiteAdapter implements NetSuitePort {
 
   // ---------------- test helpers (not part of NetSuitePort) ----------------
 
-  /** Makes the next `times` calls of `operation` ('*' = any) fail with the given kind. */
-  injectFault(kind: FaultKind, times = 1, operation: string | '*' = '*'): void {
-    this.faults.push({ operation, kind, remaining: times });
+  /**
+   * Makes the next `times` calls of `operation` ('*' = any) fail with the given kind.
+   * `key` narrows the fault to one record (e.g. one vendor's externalId), which is useful for partial-failure tests.
+   */
+  injectFault(kind: FaultKind, times = 1, operation: string | '*' = '*', key?: string): void {
+    this.faults.push({ operation, kind, remaining: times, key });
   }
 
   addBill(bill: VendorBill): void {
@@ -108,10 +112,11 @@ export class MockNetSuiteAdapter implements NetSuitePort {
   }
 
   /** Called at the start of every operation: records the call and throws an injected fault if one matches. */
-  private enter(operation: string): void {
+  private enter(operation: string, key?: string): void {
     this.calls.push(operation);
     const fault = this.faults.find(
-      (f) => f.remaining > 0 && (f.operation === '*' || f.operation === operation),
+      (f) =>
+        f.remaining > 0 && (f.operation === '*' || f.operation === operation) && (!f.key || f.key === key),
     );
     if (!fault) return;
     fault.remaining--;
@@ -170,7 +175,7 @@ export class MockNetSuiteAdapter implements NetSuitePort {
   }
 
   async upsertVendor(vendor: Vendor): Promise<UpsertResult> {
-    this.enter('upsertVendor');
+    this.enter('upsertVendor', vendor.externalId);
     const existing = this.vendors.get(vendor.externalId);
     const internalId = existing?.internalId ?? this.id();
     this.vendors.set(vendor.externalId, { ...vendor, internalId });
@@ -178,7 +183,7 @@ export class MockNetSuiteAdapter implements NetSuitePort {
   }
 
   async upsertCustomer(customer: Customer): Promise<UpsertResult> {
-    this.enter('upsertCustomer');
+    this.enter('upsertCustomer', customer.externalId);
     const existing = this.customers.get(customer.externalId);
     const internalId = existing?.internalId ?? this.id();
     this.customers.set(customer.externalId, { ...customer, internalId });
@@ -231,7 +236,7 @@ export class MockNetSuiteAdapter implements NetSuitePort {
   }
 
   async createVendorPayment(input: CreateVendorPaymentInput): Promise<UpsertResult> {
-    this.enter('createVendorPayment');
+    this.enter('createVendorPayment', input.externalId);
     this.assertOpenPeriod(input.tranDate);
     return this.createOnce('VendPymt', input.externalId, () => {
       this.applyTo(this.bills, input.applications, 1);
@@ -280,7 +285,7 @@ export class MockNetSuiteAdapter implements NetSuitePort {
   }
 
   async createCustomerPayment(input: CreateCustomerPaymentInput): Promise<UpsertResult> {
-    this.enter('createCustomerPayment');
+    this.enter('createCustomerPayment', input.externalId);
     this.assertOpenPeriod(input.tranDate);
     return this.createOnce('CustPymt', input.externalId, () => {
       this.applyTo(this.invoices, input.applications, 1);

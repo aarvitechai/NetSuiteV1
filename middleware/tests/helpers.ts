@@ -50,6 +50,7 @@ export function makeTestContext(overrides: ContainerOverrides = {}) {
     clock,
     netsuite,
     store,
+    sleep: async () => undefined, // retries must not slow tests down
     ...overrides,
   });
   return { container, app: createApp(container), clock, netsuite, store };

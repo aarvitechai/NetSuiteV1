@@ -10,6 +10,7 @@ import express from 'express';
 import type { Container } from './container';
 import { authenticate, errorHandler, requestContext, requestLogger } from './api/http';
 import { healthRoutes } from './api/routes/health';
+import { integrationRoutes } from './api/routes/integration';
 import { masterDataRoutes } from './api/routes/master-data';
 import { NotFoundError } from './shared/errors';
 
@@ -36,6 +37,7 @@ export function createApp(c: Container): express.Express {
   api.use(express.json({ limit: '256kb' }));
   api.use(authenticate(c.config.API_TOKENS));
   api.use(masterDataRoutes(c));
+  api.use(integrationRoutes(c));
   app.use('/api/v1', api);
 
   app.use((req, _res, next) => next(new NotFoundError(`Route ${req.method} ${req.path}`)));
