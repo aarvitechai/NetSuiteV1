@@ -196,3 +196,35 @@ One entry per phase: what was built, the key concepts, and answers to the plan's
 2. *How do you avoid paying a bill twice?* Seven layered defences: flags, open-batch check, duplicate
    invoice check, approval re-check, content hash, idempotency keys and externalIds.
 3. *Which statuses post to NetSuite?* Only `Settled` (create the payment) and `Reversed` (void it).
+
+## Phase 8 — Accounts Receivable, customer payments and collections
+
+**What I built**
+
+- Payment intents with a server-side ownership check, and a strict schema that rejects card fields.
+- Simulated hosted-checkout provider supporting automatic and manual capture, void, refund,
+  chargeback and daily settlement with fees.
+- HMAC webhook signatures with a timestamp tolerance.
+- Webhook inbox (deduplicated by event ID) that acknowledges immediately and processes asynchronously.
+- NetSuite postings: Customer Payment, Customer Refund, return reversal, and a Deposit of the net
+  amount with fees on a separate line.
+- Settlement arithmetic checks.
+- Aging report.
+- Idempotent collections runs with a communication audit trail.
+- Disputes.
+- Parity test showing the middleware and NetSuite compute the same collection stage.
+
+**Review questions**
+
+1. *Why is a hosted payment page or tokenization safer?*
+   - Card data never enters our systems, so we cannot leak it or log it.
+   - PCI DSS scope shrinks dramatically.
+   - The provider, which is certified, carries the card-handling risk.
+2. *How do you handle a webhook delivered more than once?*
+   - The inbox table is keyed by event ID, so a duplicate is answered 200 and nothing happens.
+   - Every handler also checks business state before acting. See
+     `docs/api-contracts/webhooks-and-customer-payments.md`.
+3. *How should fees and net settlement be represented?*
+   - The Customer Payment is booked at gross, which clears AR in full.
+   - The Deposit is booked at net, with the fee as a separate expense line.
+   - The Deposit then equals the bank statement line.

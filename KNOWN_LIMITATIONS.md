@@ -68,3 +68,14 @@ Use it to describe the project honestly, for example in interviews.
   camt.054.
 - SFTP is a local folder (`LocalFolderSftp`). There is no real SSH transport.
 - The bank vault is simulated (`SimulatedVault`). It derives fake account numbers.
+
+## AR payments (Phase 8)
+
+- The payment provider is a simulator (`SimulatedPaymentProvider`). The webhook envelope and
+  signature scheme follow common industry practice but match no specific provider.
+- Chargebacks are booked as a Customer Refund that reopens the invoice. **This accounting policy needs
+  review** (accounting-event-matrix R5).
+- Settlement gross amounts ignore refunds that happen before payout (this is a simplification).
+- Emails are recorded by `RecordingNotifier`. No real email is sent.
+- Webhook processing is asynchronous inside the same process. Phase 11 adds a durable queue or
+  outbox worker.

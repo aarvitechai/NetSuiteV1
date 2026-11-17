@@ -8,14 +8,18 @@
  */
 import type { Logger } from 'pino';
 import { ApPaymentService } from './application/ap-payments';
+import { ArPaymentService } from './application/ar-payments';
 import { AuditService } from './application/audit';
 import { BankInboundService } from './application/bank-inbound';
 import { DirectDispatcher, type Dispatcher } from './application/dispatcher';
+import { CollectionsService, RecordingNotifier, type Notifier } from './application/collections';
 import { IdempotencyService } from './application/idempotency';
 import { JobRunner } from './application/jobs';
 import { MasterDataSyncService } from './application/master-data-sync';
 import type { NetSuitePort } from './application/ports/netsuite';
 import type { Store } from './application/ports/store';
+import { WebhookService } from './application/webhooks';
+import { SimulatedPaymentProvider } from './adapters/payment-provider/simulated-provider';
 import { DEFAULT_RETRY, type RetryPolicy } from './application/retry';
 import { MockNetSuiteAdapter } from './adapters/netsuite/mock-netsuite';
 import { NetSuiteRestAdapter } from './adapters/netsuite/rest-netsuite';
@@ -42,6 +46,12 @@ export interface Container {
   dispatcher: Dispatcher;
   ap: ApPaymentService;
   bankInbound: BankInboundService;
+  /** The simulator is exposed with its concrete type so the demo and tests can drive the "customer" side. */
+  provider: SimulatedPaymentProvider;
+  ar: ArPaymentService;
+  webhooks: WebhookService;
+  collections: CollectionsService;
+  notifier: Notifier;
 }
 
 export interface ContainerOverrides {
@@ -54,6 +64,7 @@ export interface ContainerOverrides {
   retryPolicy?: RetryPolicy;
   files?: FileTransport;
   vault?: BankVault;
+  notifier?: Notifier;
 }
 
 function buildNetSuite(config: AppConfig): NetSuitePort {
@@ -100,6 +111,21 @@ export function createContainer(config: AppConfig, overrides: ContainerOverrides
   });
   const bankInbound = new BankInboundService(files, store, ap, audit, clock, logger);
 
+  const provider = new SimulatedPaymentProvider(config.WEBHOOK_SIGNING_SECRET, clock);
+  const ar = new ArPaymentService({ store, netsuite, provider, audit, jobs, dispatcher, clock });
+  const webhooks = new WebhookService(
+    store,
+    ar,
+    jobs,
+    audit,
+    clock,
+    logger,
+    config.WEBHOOK_SIGNING_SECRET,
+    provider.name,
+  );
+  const notifier = overrides.notifier ?? new RecordingNotifier();
+  const collections = new CollectionsService(netsuite, store, audit, notifier, clock);
+
   return {
     config,
     logger,
@@ -115,5 +141,10 @@ export function createContainer(config: AppConfig, overrides: ContainerOverrides
     dispatcher,
     ap,
     bankInbound,
+    provider,
+    ar,
+    webhooks,
+    collections,
+    notifier,
   };
 }

@@ -108,6 +108,8 @@ export interface NetSuitePort {
   listOpenInvoices(customerExternalId?: string): Promise<Invoice[]>;
   getInvoice(externalId: string): Promise<Invoice | undefined>;
   setInvoiceCollectionStage(externalId: string, stage: Invoice['collectionStage']): Promise<void>;
+  /** Marks an invoice as disputed (pauses collections) or clears the dispute. */
+  setInvoiceDispute(externalId: string, disputed: boolean): Promise<void>;
   createCustomerPayment(input: CreateCustomerPaymentInput): Promise<UpsertResult>;
   createDeposit(input: CreateDepositInput): Promise<UpsertResult>;
   createCustomerRefund(input: CreateCustomerRefundInput): Promise<UpsertResult>;

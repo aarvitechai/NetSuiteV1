@@ -10,9 +10,11 @@ import express from 'express';
 import type { Container } from './container';
 import { authenticate, errorHandler, requestContext, requestLogger } from './api/http';
 import { apRoutes } from './api/routes/ap';
+import { arRoutes } from './api/routes/ar';
 import { healthRoutes } from './api/routes/health';
 import { integrationRoutes } from './api/routes/integration';
 import { masterDataRoutes } from './api/routes/master-data';
+import { webhookRoutes } from './api/routes/webhooks';
 import { NotFoundError } from './shared/errors';
 
 const OPENAPI_PATH = resolve(__dirname, '../openapi.yaml');
@@ -28,6 +30,10 @@ export function createApp(c: Container): express.Express {
   // Health checks are public: load balancers call them without credentials.
   app.use(healthRoutes(c));
 
+  // Webhooks authenticate by signature (not bearer token) and need the raw body, so they are mounted
+  // before the JSON parser and the token check.
+  app.use(webhookRoutes(c));
+
   app.get('/api/v1/openapi.yaml', (_req, res) => {
     res.type('application/yaml').send(readFileSync(OPENAPI_PATH, 'utf8'));
   });
@@ -40,6 +46,7 @@ export function createApp(c: Container): express.Express {
   api.use(masterDataRoutes(c));
   api.use(integrationRoutes(c));
   api.use(apRoutes(c));
+  api.use(arRoutes(c));
   app.use('/api/v1', api);
 
   app.use((req, _res, next) => next(new NotFoundError(`Route ${req.method} ${req.path}`)));

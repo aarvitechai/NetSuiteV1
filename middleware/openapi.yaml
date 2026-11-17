@@ -16,6 +16,8 @@ tags:
   - name: audit
   - name: integration
   - name: ap
+  - name: ar
+  - name: webhooks
 paths:
   /health:
     get:
@@ -267,6 +269,122 @@ paths:
       summary: Process files in the bank SFTP inbound folder (ACK, PAYMENT_STATUS, statements)
       responses:
         '200': { description: One result per file (PROCESSED, DUPLICATE, QUARANTINED, RETRY_LATER) }
+  /api/v1/payment-intents:
+    post:
+      tags: [ar]
+      summary: Start an online payment for open invoices (customer for own invoices, or ar_clerk)
+      parameters: [{ $ref: '#/components/parameters/IdempotencyKey' }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [invoiceExternalIds]
+              properties:
+                customerExternalId: { type: string, description: 'ar_clerk only; ignored for customers' }
+                invoiceExternalIds: { type: array, items: { type: string } }
+                amount: { type: string, description: 'Optional partial amount; applied oldest invoice first' }
+                captureMode: { type: string, enum: [automatic, manual] }
+      responses:
+        '201': { description: 'Intent with checkoutUrl (hosted page) and status REQUIRES_PAYMENT' }
+        '404': { description: Invoice not found among this customer's open invoices }
+        '409': { description: PAYMENT_ALREADY_IN_PROGRESS }
+  /api/v1/payment-intents/{id}:
+    get:
+      tags: [ar]
+      summary: Payment intent (customers see only their own)
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses:
+        '200': { description: OK }
+  /api/v1/payment-intents/{id}/capture:
+    post:
+      tags: [ar]
+      summary: Capture an authorized payment (manual mode)
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses:
+        '200': { description: SUCCEEDED }
+  /api/v1/payment-intents/{id}/void:
+    post:
+      tags: [ar]
+      summary: Void an authorization
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses:
+        '200': { description: CANCELED }
+  /api/v1/payment-intents/{id}/refunds:
+    post:
+      tags: [ar]
+      summary: Request a (partial) refund; NetSuite is updated when the provider confirms via webhook
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - { $ref: '#/components/parameters/IdempotencyKey' }
+      requestBody:
+        content:
+          {
+            application/json:
+              {
+                schema:
+                  {
+                    type: object,
+                    required: [amount, reason],
+                    properties: { amount: { type: string }, reason: { type: string } },
+                  },
+              },
+          }
+      responses:
+        '202': { description: PENDING_PROVIDER_CONFIRMATION }
+  /api/v1/settlements:
+    get:
+      tags: [ar]
+      summary: Provider settlements (gross, fees, net) and their NetSuite deposit status
+      responses:
+        '200': { description: OK }
+  /api/v1/ar/aging:
+    get:
+      tags: [ar]
+      summary: Aging report from NetSuite open invoices
+      parameters: [{ name: asOf, in: query, schema: { type: string, format: date } }]
+      responses:
+        '200': { description: OK }
+  /api/v1/ar/collections/run:
+    post:
+      tags: [ar]
+      summary: Send due reminders and escalations (idempotent)
+      responses:
+        '200': { description: Summary }
+  /api/v1/ar/collections/actions:
+    get:
+      tags: [ar]
+      summary: Customer communication audit trail
+      parameters:
+        - { name: invoice, in: query, schema: { type: string } }
+        - { name: customer, in: query, schema: { type: string } }
+      responses:
+        '200': { description: OK }
+  /api/v1/invoices/{externalId}/dispute:
+    post:
+      tags: [ar]
+      summary: Open or close a dispute (pauses collections)
+      parameters: [{ $ref: '#/components/parameters/ExternalId' }]
+      responses:
+        '200': { description: OK }
+  /webhooks/payment-provider:
+    post:
+      tags: [webhooks]
+      security: []
+      summary: Payment provider webhooks (HMAC signature in X-Signature; see docs/api-contracts/webhooks-and-customer-payments.md)
+      parameters:
+        - {
+            name: X-Signature,
+            in: header,
+            required: true,
+            schema: { type: string, example: 't=1763629200,v1=5f…' },
+          }
+      responses:
+        '202': { description: Accepted for asynchronous processing }
+        '200': { description: Duplicate event (already received) }
+        '400': { description: Unsupported event type/version }
+        '401': { description: WEBHOOK_SIGNATURE_INVALID }
 components:
   securitySchemes:
     bearerAuth: { type: http, scheme: bearer }

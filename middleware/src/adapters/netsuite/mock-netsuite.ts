@@ -298,6 +298,13 @@ export class MockNetSuiteAdapter implements NetSuitePort {
     i.collectionStage = stage;
   }
 
+  async setInvoiceDispute(externalId: string, disputed: boolean) {
+    this.enter('setInvoiceDispute', externalId);
+    const i = this.invoices.get(externalId);
+    if (!i) throw new NetSuiteBusinessError(`Invoice ${externalId} not found`);
+    i.disputed = disputed;
+  }
+
   async createCustomerPayment(input: CreateCustomerPaymentInput): Promise<UpsertResult> {
     this.enter('createCustomerPayment', input.externalId);
     this.assertOpenPeriod(input.tranDate);

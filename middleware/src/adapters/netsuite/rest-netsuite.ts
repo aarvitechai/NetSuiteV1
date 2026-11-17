@@ -389,6 +389,12 @@ export class NetSuiteRestAdapter implements NetSuitePort {
     });
   }
 
+  async setInvoiceDispute(externalId: string, disputed: boolean): Promise<void> {
+    await this.request('PATCH', `/record/v1/invoice/eid:${encodeURIComponent(externalId)}`, {
+      custbody_nsd_dispute: disputed,
+    });
+  }
+
   createCustomerPayment(input: CreateCustomerPaymentInput): Promise<UpsertResult> {
     return this.createOnce('transaction', 'customerPayment', input.externalId, async () => ({
       customer: { id: await this.requireId('customer', input.customerExternalId) },
