@@ -18,6 +18,7 @@ tags:
   - name: ap
   - name: ar
   - name: webhooks
+  - name: portal
 paths:
   /health:
     get:
@@ -366,6 +367,18 @@ paths:
       tags: [ar]
       summary: Open or close a dispute (pauses collections)
       parameters: [{ $ref: '#/components/parameters/ExternalId' }]
+      responses:
+        '200': { description: OK }
+  /api/v1/portal/me:
+    get:
+      tags: [portal]
+      summary: Signed-in customer's profile (role customer; no customer parameter by design)
+      responses:
+        '200': { description: OK }
+  /api/v1/portal/statement:
+    get:
+      tags: [portal]
+      summary: Open balance, open invoices (with overdue / payment_pending / disputed state) and payment history with plain-language status
       responses:
         '200': { description: OK }
   /webhooks/payment-provider:

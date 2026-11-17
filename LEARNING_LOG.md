@@ -228,3 +228,23 @@ One entry per phase: what was built, the key concepts, and answers to the plan's
    - The Customer Payment is booked at gross, which clears AR in full.
    - The Deposit is booked at net, with the fee as a separate expense line.
    - The Deposit then equals the bank statement line.
+
+## Phase 9 — SuiteCommerce MyAccount customer portal
+
+**What I built**
+
+- portal API (`/portal/me`, `/portal/statement`) scoped by the token subject
+- plain-language pending and settled statuses
+- an accessible, clearly labelled local prototype (HTML, CSS and JS, with CSP and textContent rendering)
+- simulated hosted checkout, mounted only outside production
+- UX spec with access-control matrix
+- SCMA extension design plan (not implemented, no licence)
+
+**Review questions**
+
+1. *Where should customer authorization be enforced?* On the server, from the authenticated identity.
+   Never from request parameters, and never by hiding things in the UI.
+2. *Which customisations does the deployed SCMA version support?* That must be verified against the
+   account's SC version and the documented extension points. See `portal/scma-extension/README.md`.
+3. *Pending versus settled?* "Payment received – processing" while the payment is succeeded but not
+   settled. "Completed" once the settlement Deposit is posted.

@@ -11,13 +11,16 @@ import type { Container } from './container';
 import { authenticate, errorHandler, requestContext, requestLogger } from './api/http';
 import { apRoutes } from './api/routes/ap';
 import { arRoutes } from './api/routes/ar';
+import { devRoutes } from './api/routes/dev';
 import { healthRoutes } from './api/routes/health';
 import { integrationRoutes } from './api/routes/integration';
 import { masterDataRoutes } from './api/routes/master-data';
+import { portalRoutes } from './api/routes/portal';
 import { webhookRoutes } from './api/routes/webhooks';
 import { NotFoundError } from './shared/errors';
 
 const OPENAPI_PATH = resolve(__dirname, '../openapi.yaml');
+const PORTAL_DIR = resolve(__dirname, '../../portal/local-prototype');
 
 export function createApp(c: Container): express.Express {
   const app = express();
@@ -34,6 +37,22 @@ export function createApp(c: Container): express.Express {
   // before the JSON parser and the token check.
   app.use(webhookRoutes(c));
 
+  // Customer portal prototype (static files). A Content-Security-Policy allows only our own scripts,
+  // so even if HTML injection happened, injected inline <script> would not run.
+  app.use(
+    '/portal',
+    (_req, res, next) => {
+      res.setHeader(
+        'Content-Security-Policy',
+        "default-src 'self'; script-src 'self'; style-src 'self'; frame-ancestors 'none'",
+      );
+      res.setHeader('X-Content-Type-Options', 'nosniff');
+      next();
+    },
+    express.static(PORTAL_DIR),
+  );
+  if (c.config.NODE_ENV !== 'production') app.use(devRoutes(c)); // simulated checkout: never in production
+
   app.get('/api/v1/openapi.yaml', (_req, res) => {
     res.type('application/yaml').send(readFileSync(OPENAPI_PATH, 'utf8'));
   });
@@ -47,6 +66,7 @@ export function createApp(c: Container): express.Express {
   api.use(integrationRoutes(c));
   api.use(apRoutes(c));
   api.use(arRoutes(c));
+  api.use(portalRoutes(c));
   app.use('/api/v1', api);
 
   app.use((req, _res, next) => next(new NotFoundError(`Route ${req.method} ${req.path}`)));

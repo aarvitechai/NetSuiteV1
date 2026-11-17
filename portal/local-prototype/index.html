@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Northstar – Customer Account (local prototype)</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <!-- Honesty first: this page must never be presented as a deployed SuiteCommerce MyAccount extension. -->
+    <div class="banner" role="note">
+      LOCAL PROTOTYPE: not a SuiteCommerce MyAccount extension. Synthetic data, simulated payments.
+    </div>
+
+    <header class="topbar">
+      <span class="brand">Northstar Distribution</span>
+      <span id="who" aria-live="polite"></span>
+      <button id="logout" type="button" hidden>Sign out</button>
+    </header>
+
+    <main>
+      <!-- Sign-in (prototype: paste a test token from .env.example, e.g. dev-cust-acme) -->
+      <section id="login" class="card narrow" aria-labelledby="login-title">
+        <h1 id="login-title">Sign in</h1>
+        <form id="login-form">
+          <label for="token">Access token (test)</label>
+          <input id="token" name="token" autocomplete="off" required placeholder="dev-cust-acme" />
+          <button class="primary" type="submit">Sign in</button>
+        </form>
+        <p class="hint">Real SCMA uses the shopper's NetSuite login session instead of tokens.</p>
+      </section>
+
+      <section id="account" hidden>
+        <!-- Live region: screen readers announce loading, errors and confirmations. -->
+        <div id="status" role="status" aria-live="polite" class="status"></div>
+
+        <section class="card" aria-labelledby="balance-title">
+          <h2 id="balance-title">Open balance</h2>
+          <p id="balance" class="big">–</p>
+        </section>
+
+        <section class="card" aria-labelledby="invoices-title">
+          <h2 id="invoices-title">Invoices</h2>
+          <form id="pay-form">
+            <table>
+              <caption class="sr-only">
+                Open invoices. Select invoices to pay.
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col"><span class="sr-only">Select</span></th>
+                  <th scope="col">Invoice</th>
+                  <th scope="col">Due date</th>
+                  <th scope="col" class="num">Amount due</th>
+                  <th scope="col">Status</th>
+                </tr>
+              </thead>
+              <tbody id="invoice-rows"></tbody>
+            </table>
+            <p id="invoices-empty" class="empty" hidden>You have no open invoices. Thank you!</p>
+            <div class="actions">
+              <span id="selected-total" aria-live="polite"></span>
+              <button id="pay-btn" class="primary" type="submit" disabled>Pay selected</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="card" aria-labelledby="payments-title">
+          <h2 id="payments-title">Payment history</h2>
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Date</th>
+                <th scope="col">Invoices</th>
+                <th scope="col" class="num">Amount</th>
+                <th scope="col">Status</th>
+              </tr>
+            </thead>
+            <tbody id="payment-rows"></tbody>
+          </table>
+          <p id="payments-empty" class="empty" hidden>No payments yet.</p>
+          <p class="hint">
+            <strong>Payment received – processing</strong> means your payment was accepted and will appear as
+            <strong>Completed</strong> once the funds settle (usually 1–2 business days).
+          </p>
+        </section>
+      </section>
+    </main>
+  </body>
+</html>

@@ -79,3 +79,10 @@ Use it to describe the project honestly, for example in interviews.
 - Emails are recorded by `RecordingNotifier`. No real email is sent.
 - Webhook processing is asynchronous inside the same process. Phase 11 adds a durable queue or
   outbox worker.
+
+## Customer portal (Phase 9)
+
+- `portal/local-prototype` is a **local prototype**. It is not a SuiteCommerce MyAccount extension.
+- The SCMA extension exists only as a design (`portal/scma-extension/README.md`).
+- Sign-in uses static test tokens. A real portal would use NetSuite shopper sessions, or OIDC.
+- The hosted checkout page is simulated (`/dev/checkout`) and is disabled in production.

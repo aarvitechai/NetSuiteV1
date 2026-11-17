@@ -1,0 +1,178 @@
+/* Simple, accessible styles: high contrast, visible focus, readable sizes, works at phone width. */
+:root {
+  --ink: #1b1f24;
+  --muted: #57606a;
+  --line: #d0d7de;
+  --bg: #f6f8fa;
+  --card: #ffffff;
+  --primary: #0b5cad;
+  --ok: #1a7f37;
+  --warn: #9a6700;
+  --bad: #cf222e;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  font:
+    16px/1.5 system-ui,
+    -apple-system,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
+  color: var(--ink);
+  background: var(--bg);
+}
+.banner {
+  background: #fff8c5;
+  border-bottom: 1px solid #d4a72c;
+  padding: 8px 16px;
+  font-weight: 600;
+  text-align: center;
+}
+.topbar {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  padding: 12px 16px;
+  background: var(--card);
+  border-bottom: 1px solid var(--line);
+}
+.brand {
+  font-weight: 700;
+  margin-right: auto;
+}
+main {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 16px;
+}
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+.narrow {
+  max-width: 420px;
+  margin: 32px auto;
+}
+h1,
+h2 {
+  margin-top: 0;
+}
+.big {
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0;
+}
+label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+input:not([type='checkbox']) {
+  width: 100%;
+  padding: 8px;
+  font-size: 1rem;
+  border: 1px solid var(--muted);
+  border-radius: 6px;
+  margin-bottom: 12px;
+}
+button {
+  font-size: 1rem;
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: 1px solid var(--muted);
+  background: var(--card);
+  cursor: pointer;
+}
+button.primary {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+:focus-visible {
+  outline: 3px solid #f0a000;
+  outline-offset: 2px;
+}
+form + form {
+  margin-top: 12px;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+th,
+td {
+  text-align: left;
+  padding: 8px;
+  border-bottom: 1px solid var(--line);
+}
+.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 16px;
+  align-items: center;
+  margin-top: 12px;
+}
+.badge {
+  font-weight: 600;
+}
+.badge.overdue,
+.badge.failed,
+.badge.reversed {
+  color: var(--bad);
+}
+.badge.payment_pending,
+.badge.payment,
+.badge.awaiting,
+.badge.authorized {
+  color: var(--warn);
+}
+.badge.completed,
+.badge.open {
+  color: var(--ok);
+}
+.status {
+  min-height: 1.5em;
+  margin-bottom: 8px;
+}
+.status.error {
+  color: var(--bad);
+  font-weight: 600;
+}
+.status.ok {
+  color: var(--ok);
+  font-weight: 600;
+}
+.status.loading {
+  color: var(--muted);
+}
+.empty,
+.hint {
+  color: var(--muted);
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+@media (max-width: 600px) {
+  th:nth-child(3),
+  td:nth-child(3) {
+    display: none;
+  }
+}
