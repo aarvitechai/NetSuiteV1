@@ -20,6 +20,7 @@ tags:
   - name: webhooks
   - name: portal
   - name: reconciliation
+  - name: ops
 paths:
   /health:
     get:
@@ -472,6 +473,27 @@ paths:
         - { name: to, in: query, required: true, schema: { type: string, format: date } }
       responses:
         '200': { description: OK }
+  /api/v1/reconciliation/control-totals:
+    get:
+      tags: [reconciliation]
+      summary: Period control totals across bills, instructions, provider, NetSuite and bank (UAT exit evidence)
+      parameters:
+        - { name: from, in: query, required: true, schema: { type: string, format: date } }
+        - { name: to, in: query, required: true, schema: { type: string, format: date } }
+      responses:
+        '200': { description: '{ balanced, checks[] } with counts, amounts and differences' }
+  /api/v1/ops/dashboard:
+    get:
+      tags: [ops]
+      summary: Integration health snapshot (outbox, DLQ, webhooks, batches, reconciliation, quarantine)
+      responses:
+        '200': { description: OK }
+  /metrics:
+    get:
+      tags: [ops]
+      summary: Prometheus metrics (role ops)
+      responses:
+        '200': { description: text/plain exposition format }
   /api/v1/bank/files/quarantine:
     get:
       tags: [reconciliation]

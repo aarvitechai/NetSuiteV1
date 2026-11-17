@@ -302,3 +302,25 @@ One entry per phase: what was built, the key concepts, and answers to the plan's
    is the final safety net for the general ledger.
 3. *What data must never appear in logs?* Card numbers, CVV, full bank account numbers, passwords,
    API tokens, OAuth secrets, webhook signatures and secrets, and full request bodies.
+
+## Phase 12 — Testing, UAT and accounting reconciliation
+
+**What I built**
+
+- Period control totals: 9 checks across bills, instructions, provider, NetSuite and bank, exposed as
+  an endpoint.
+- A full-period end-to-end test, plus a negative test showing an imbalance is detected.
+- `npm run test:report`, which writes JUnit output and coverage.
+- Test strategy, UAT scripts with a regression mapping, a defect log of the 12 real defects found,
+  a sign-off template, and the test report.
+
+**Review questions**
+
+1. *Which tests need a real NetSuite sandbox?* REST body shapes, TBA, governance, SuiteFlow, SDF
+   deploy, concurrency limits and closed-period behaviour. See the table in
+   `docs/testing/test-strategy.md`.
+2. *How do you prove no transaction was lost or duplicated?* The control totals compare counts and
+   amounts in every system. In addition, the reconciliation report must show no open items, and the
+   DLQ and outbox must be empty.
+3. *What is the exit criterion for UAT?* All scripts passed and signed off, no severity 1 or 2
+   defects open, control totals balanced, and the accounting mappings reviewed.

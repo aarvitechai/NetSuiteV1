@@ -74,6 +74,12 @@ export function reconciliationRoutes(c: Container): Router {
     res.json(await c.reconciliation.report(from, to));
   });
 
+  /** Period control totals: proof that counts and amounts balance across every system (UAT evidence). */
+  r.get('/reconciliation/control-totals', read, async (req, res) => {
+    const { from, to } = parse(z.object({ from: Date, to: Date }), req.query);
+    res.json(await c.controlTotals.run(from, to));
+  });
+
   r.get('/bank/files/quarantine', requireRole('ops'), async (_req, res) => {
     res.json({ items: await c.bankInbound.listQuarantined() });
   });

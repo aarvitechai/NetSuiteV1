@@ -13,6 +13,7 @@ import { AuditService } from './application/audit';
 import { BankInboundService } from './application/bank-inbound';
 import { OutboxDispatcher } from './application/dispatcher';
 import { CollectionsService, RecordingNotifier, type Notifier } from './application/collections';
+import { ControlTotalsService } from './application/control-totals';
 import { IdempotencyService } from './application/idempotency';
 import { JobRunner } from './application/jobs';
 import { MasterDataSyncService } from './application/master-data-sync';
@@ -55,6 +56,7 @@ export interface Container {
   collections: CollectionsService;
   notifier: Notifier;
   reconciliation: ReconciliationService;
+  controlTotals: ControlTotalsService;
   metrics: Metrics;
 }
 
@@ -158,6 +160,7 @@ export function createContainer(config: AppConfig, overrides: ContainerOverrides
     collections,
     notifier,
     reconciliation,
+    controlTotals: new ControlTotalsService(store, netsuite),
     metrics: new Metrics(),
   };
 }
