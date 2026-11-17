@@ -1,0 +1,18 @@
+<!-- Validates vendor bills, blocks duplicates and locked edits.
+     Deployment status is TESTING: only the script owner triggers it until promoted to RELEASED. -->
+<usereventscript scriptid="customscript_nsd_ue_vendor_bill">
+  <name>NSD UE Vendor Bill</name>
+  <scriptfile>[/SuiteScripts/northstar/user-events/nsd_ue_vendor_bill.js]</scriptfile>
+  <description>Validates vendor bills, blocks duplicates and locked edits.</description>
+  <isinactive>F</isinactive>
+  <notifyowner>T</notifyowner>
+  <scriptdeployments>
+    <scriptdeployment scriptid="customdeploy_nsd_ue_vendor_bill">
+      <isdeployed>T</isdeployed>
+      <loglevel>DEBUG</loglevel>
+      <status>TESTING</status>
+      <recordtype>VENDORBILL</recordtype>
+      <allroles>T</allroles>
+    </scriptdeployment>
+  </scriptdeployments>
+</usereventscript>

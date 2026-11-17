@@ -1,0 +1,18 @@
+<!-- Read-only payment batch dashboard.
+     Deployment status is TESTING: only the script owner triggers it until promoted to RELEASED. -->
+<suitelet scriptid="customscript_nsd_sl_batch_review">
+  <name>NSD SL Payment Batch Review</name>
+  <scriptfile>[/SuiteScripts/northstar/suitelets/nsd_sl_batch_review.js]</scriptfile>
+  <description>Read-only payment batch dashboard.</description>
+  <isinactive>F</isinactive>
+  <notifyowner>T</notifyowner>
+  <scriptdeployments>
+    <scriptdeployment scriptid="customdeploy_nsd_sl_batch_review">
+      <isdeployed>T</isdeployed>
+      <loglevel>DEBUG</loglevel>
+      <status>TESTING</status>
+      <allroles>F</allroles>
+      <title>Payment Batch Review</title>
+    </scriptdeployment>
+  </scriptdeployments>
+</suitelet>

@@ -1,0 +1,24 @@
+<!-- Nightly scan for payments stuck in progress.
+     Deployment status is TESTING: only the script owner triggers it until promoted to RELEASED. -->
+<scheduledscript scriptid="customscript_nsd_ss_stale_payments">
+  <name>NSD SS Stale Payments</name>
+  <scriptfile>[/SuiteScripts/northstar/scheduled/nsd_ss_stale_payments.js]</scriptfile>
+  <description>Nightly scan for payments stuck in progress.</description>
+  <isinactive>F</isinactive>
+  <notifyowner>T</notifyowner>
+  <scriptcustomfields>
+    <scriptcustomfield scriptid="custscript_nsd_ss_stale_days">
+      <fieldtype>INTEGER</fieldtype>
+      <label>Stale after (days)</label>
+      <ismandatory>F</ismandatory>
+      <storevalue>T</storevalue>
+    </scriptcustomfield>
+  </scriptcustomfields>
+  <scriptdeployments>
+    <scriptdeployment scriptid="customdeploy_nsd_ss_stale_payments">
+      <isdeployed>T</isdeployed>
+      <loglevel>DEBUG</loglevel>
+      <status>TESTING</status>
+    </scriptdeployment>
+  </scriptdeployments>
+</scheduledscript>

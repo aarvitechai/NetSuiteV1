@@ -1,0 +1,25 @@
+<!-- Narrow endpoint to read/update integration status fields.
+     Deployment status is TESTING: only the script owner triggers it until promoted to RELEASED. -->
+<restlet scriptid="customscript_nsd_rl_integration_status">
+  <name>NSD RL Integration Status</name>
+  <scriptfile>[/SuiteScripts/northstar/restlets/nsd_rl_integration_status.js]</scriptfile>
+  <description>Narrow endpoint to read/update integration status fields.</description>
+  <isinactive>F</isinactive>
+  <notifyowner>T</notifyowner>
+  <scriptcustomfields>
+    <scriptcustomfield scriptid="custscript_nsd_rl_allowed_types">
+      <fieldtype>TEXT</fieldtype>
+      <label>Allowed record types (comma separated)</label>
+      <ismandatory>F</ismandatory>
+      <storevalue>T</storevalue>
+    </scriptcustomfield>
+  </scriptcustomfields>
+  <scriptdeployments>
+    <scriptdeployment scriptid="customdeploy_nsd_rl_integration_status">
+      <isdeployed>T</isdeployed>
+      <loglevel>DEBUG</loglevel>
+      <status>TESTING</status>
+      <allroles>F</allroles>
+    </scriptdeployment>
+  </scriptdeployments>
+</restlet>

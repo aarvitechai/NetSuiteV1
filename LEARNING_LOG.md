@@ -77,3 +77,21 @@ One entry per phase: what was built, the key concepts, and answers to the plan's
 2. *Why are external IDs useful?* They let you upsert without looking up the internal ID, they make
    retries duplicate-safe, and they let you trace a record back to the source system.
 3. *What belongs in NetSuite and what in the middleware?* See the table in `docs/netsuite/data-dictionary.md`.
+
+## Phase 3 — SuiteScript 2.x fundamentals and automation
+
+**What I built**
+
+- one script of each type (UE, CS, SS, MR, SL, RL)
+- pure rules library
+- integration-log library
+- SDF script objects and deployments
+- fake `N/*` modules, with 35 behaviour tests
+
+**Review questions** (answered in detail in `docs/netsuite/suitescript-guide.md`)
+
+1. *Which logic belongs where?* Integrity → User Event. Experience → Client. Periodic → Scheduled.
+   Volume → Map/Reduce.
+2. *What happens when a script exceeds governance?* `SSS_USAGE_LIMIT_EXCEEDED`: the script stops
+   and earlier saves are kept. Design for it by rescheduling or by using Map/Reduce.
+3. *Why must Map/Reduce be restart-safe?* An invocation can be re-run, so the work must be idempotent.

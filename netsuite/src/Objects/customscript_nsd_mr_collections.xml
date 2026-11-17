@@ -1,0 +1,19 @@
+<!-- Updates collection stage of overdue invoices.
+     Deployment status is TESTING: only the script owner triggers it until promoted to RELEASED. -->
+<mapreducescript scriptid="customscript_nsd_mr_collections">
+  <name>NSD MR Collections Stage</name>
+  <scriptfile>[/SuiteScripts/northstar/map-reduce/nsd_mr_collections.js]</scriptfile>
+  <description>Updates collection stage of overdue invoices.</description>
+  <isinactive>F</isinactive>
+  <notifyowner>T</notifyowner>
+  <scriptdeployments>
+    <scriptdeployment scriptid="customdeploy_nsd_mr_collections">
+      <isdeployed>T</isdeployed>
+      <loglevel>DEBUG</loglevel>
+      <status>TESTING</status>
+      <concurrencylimit>2</concurrencylimit>
+      <yieldaftermins>60</yieldaftermins>
+      <buffersize>1</buffersize>
+    </scriptdeployment>
+  </scriptdeployments>
+</mapreducescript>

@@ -29,3 +29,13 @@ Use it to describe the project honestly, for example in interviews.
 - Before deploying, run `suitecloud project:validate`. After the first deploy, re-import the objects
   with `suitecloud object:import` to pick up account-specific attributes.
 - The saved-search status codes (`VendBill:A`, `CustInvc:A`) must be verified in the target account.
+
+## SuiteScripts (Phase 3)
+
+- All six scripts are tested only against **fake `N/*` modules** (`netsuite/tests/harness`). They
+  have not run inside NetSuite.
+- Behaviour that needs a sandbox to confirm:
+  - governance consumption
+  - `getFields()` on XEDIT
+  - formula column naming (`formulanumeric`) in Map/Reduce values
+  - deployment XML attributes

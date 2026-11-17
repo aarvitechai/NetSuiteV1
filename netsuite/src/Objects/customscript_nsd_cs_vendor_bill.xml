@@ -1,0 +1,18 @@
+<!-- Instant form feedback for AP clerks (not a security boundary).
+     Deployment status is TESTING: only the script owner triggers it until promoted to RELEASED. -->
+<clientscript scriptid="customscript_nsd_cs_vendor_bill">
+  <name>NSD CS Vendor Bill</name>
+  <scriptfile>[/SuiteScripts/northstar/client/nsd_cs_vendor_bill.js]</scriptfile>
+  <description>Instant form feedback for AP clerks (not a security boundary).</description>
+  <isinactive>F</isinactive>
+  <notifyowner>T</notifyowner>
+  <scriptdeployments>
+    <scriptdeployment scriptid="customdeploy_nsd_cs_vendor_bill">
+      <isdeployed>T</isdeployed>
+      <loglevel>DEBUG</loglevel>
+      <status>TESTING</status>
+      <recordtype>VENDORBILL</recordtype>
+      <allroles>T</allroles>
+    </scriptdeployment>
+  </scriptdeployments>
+</clientscript>
