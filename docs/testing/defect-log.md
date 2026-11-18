@@ -24,6 +24,7 @@ Severity:
 | D-011 | 11 | 2 | Load test | `MemoryStore.transaction` deep-copied the whole store, which capped AR payments at 10/s | Undo-log transactions: **64× faster** | `store.test.ts` rollback contract plus `docs/performance/report.md` |
 | D-013 | 13 | 3 | Docker build | The `package-lock.json` generated on Windows was missing Linux-only optional dependencies, so `npm ci` failed on Linux. CI would have failed too. | Lockfile regenerated on Linux (Docker) | CI `npm ci` on ubuntu |
 | D-014 | 13 | 2 | Container smoke test | The non-root container could not create `/app/runtime-data`: EACCES, which returned 500 on SFTP-related endpoints | A writable directory owned by `node`, created in the Dockerfile | `ci.yml` container smoke test |
+| D-015 | 14 | 3 | Manual run (`npm run dev`) | The setup guide says `cp .env.example .env` then `npm run dev`, but nothing loaded `.env`, so the server stopped at startup with "WEBHOOK_SIGNING_SECRET … received undefined" | The `dev` script passes `--env-file-if-exists=.env` to Node (via tsx). Production still uses real environment variables only. Verified on Node 24; the flag needs a recent Node (CI uses 22 and 24). | Manual: `npm run dev` then `/ready` returned "ready" |
 | D-012 | 11 | 3 | Load test (analysis) | The REST adapter flags bills one PATCH at a time, giving N requests per batch | **Open.** Recommendation recorded in the performance report (bulk RESTlet or Map/Reduce). | — |
 
 ## Open defects
