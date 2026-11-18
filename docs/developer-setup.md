@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-- Node.js 20 or later (LTS recommended)
+- Node.js 22 or later (LTS recommended). CI tests Node 22 and 24.
 - Git
 - *Optional:* Docker, for PostgreSQL
 

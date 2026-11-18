@@ -5,7 +5,7 @@
   "description": "Learning project: NetSuite AP/AR & Banking Payments Integration Platform for the fictional Northstar Distribution.",
   "license": "UNLICENSED",
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "scripts": {
     "dev": "tsx watch --env-file-if-exists=.env middleware/src/server.ts | pino-pretty",
